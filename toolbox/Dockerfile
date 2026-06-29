@@ -1,6 +1,5 @@
 FROM alpine:3.22
 
-ARG TARGETARCH=arm64
 ARG KUBECTL_VERSION=v1.36.2
 ARG HELM_VERSION=v4.2.2
 ARG TERRAFORM_VERSION=1.15.7
@@ -13,6 +12,11 @@ RUN apk add --no-cache \
         docker-cli coreutils gettext
 
 RUN set -eux; \
+    case "$(uname -m)" in \
+      x86_64) TARGETARCH=amd64 ;; \
+      aarch64|arm64) TARGETARCH=arm64 ;; \
+      *) echo "unsupported build arch: $(uname -m)" >&2; exit 1 ;; \
+    esac; \
     curl -fsSL -o /usr/local/bin/kubectl \
         "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl"; \
     chmod +x /usr/local/bin/kubectl; \

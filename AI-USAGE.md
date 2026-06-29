@@ -38,7 +38,11 @@ still has its other node, so the evicted pod reschedules there. Re-ran the drill
 zero `Pending`, rollout back to 3/3, `curl` loop ok=40/fail=0, and the PDB correctly held ≥2 available
 mid-drain.** (A strict 2:1 ratio is biased via a max-weight spot preference but is best-effort — the
 scheduler's balanced-allocation scoring means it can't be hard-pinned without re-introducing the drain
-trap; the hard guarantee we keep is "≥1 on-demand, always reschedulable".)
+trap; the hard guarantee we keep is "≥1 on-demand, always reschedulable".) On top of the hard *capacity*
+spread the final chart **also layers a *soft* `kubernetes.io/hostname` spread (`ScheduleAnyway`)**: the
+thing iteration 1 got wrong was using a soft spread *as the only control* (it was outscored → all on spot);
+used *additively* under the hard capacity guarantee it is safe and gives the per-node distribution the brief
+asks for ("replicas spread across nodes") without re-introducing the drain wedge.
 
 **Outdated dependency shipped HIGH CVEs (caught by the security gate, not by reading code).** The
 model pinned `fastapi==0.115.6` — its training-era "latest". Running the image through **Trivy** (the

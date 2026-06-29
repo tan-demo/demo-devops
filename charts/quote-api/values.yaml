@@ -45,7 +45,7 @@ placement:
   onDemandValue: on-demand
   preferSpotWeight: 100
   restrictToCapacityPool: true
-  spreadByHostname: false
+  spreadByHostname: true
   hostnameWhenUnsatisfiable: ScheduleAnyway
   hostnameMaxSkew: 1
   spreadByCapacity: true

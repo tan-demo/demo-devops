@@ -15,8 +15,10 @@ fi
 
 cd /workspace
 
-# Heavy/disruptive demos are opt-in (run them individually). Override with SKIP_STEPS="".
-SKIP_STEPS="${SKIP_STEPS:-25 60}"
+# Step 25 (reclaim drill) runs by default — it is fast and self-heals (uncordons).
+# Step 60 (load test) is opt-in: it installs the full kube-prometheus-stack and runs
+# k6, which is heavy on a fresh machine. Override with SKIP_STEPS="" to run everything.
+SKIP_STEPS="${SKIP_STEPS:-60}"
 
 for step in scripts/[0-9][0-9]-*.sh; do
   [ -e "$step" ] || continue
@@ -32,6 +34,5 @@ for step in scripts/[0-9][0-9]-*.sh; do
 done
 
 echo ""
-echo ">> core steps complete."
-echo ">> resilience demo:  docker compose exec toolbox /workspace/scripts/25-reclaim-drill.sh"
-echo ">> load test (Part 6): docker compose exec toolbox /workspace/scripts/60-loadtest.sh"
+echo ">> core steps complete (including the 25 reclaim drill)."
+echo ">> load test (Part 6, opt-in — heavy): docker compose exec toolbox /workspace/scripts/60-loadtest.sh"
