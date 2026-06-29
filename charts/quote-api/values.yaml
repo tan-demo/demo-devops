@@ -1,5 +1,9 @@
 replicaCount: 3
 
+terminationGracePeriodSeconds: 20
+lifecycle:
+  preStopSleepSeconds: 5
+
 image:
   repository: ghcr.io/tan-demo/quote-api
   tag: ""
