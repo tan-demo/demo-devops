@@ -4,8 +4,13 @@ set -euo pipefail
 # Runs every numbered step in order. Safe to re-run (each step is idempotent).
 # On the host this re-execs inside the toolbox container (which has kubectl/helm/k6).
 if [ -z "${TOOLBOX:-}" ]; then
-  echo ">> not in toolbox — re-exec inside the toolbox container"
-  exec docker compose exec -T toolbox /workspace/scripts/run-all.sh
+  echo ">> not in toolbox — running all steps inside the toolbox container"
+  rc=0
+  docker compose exec -T toolbox /workspace/scripts/run-all.sh || rc=$?
+  echo ""
+  echo ">> setting up local access (host kubeconfig + ArgoCD login)..."
+  sh "$(dirname "$0")/access.sh" || true
+  exit "$rc"
 fi
 
 cd /workspace
