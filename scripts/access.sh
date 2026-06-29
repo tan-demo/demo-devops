@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-# Host helper: set up local access to the k3d cluster + ArgoCD.
-# The cluster and toolbox live inside Docker; this writes a host-usable kubeconfig
-# (the in-cluster one points at host.docker.internal, which the host can't resolve)
-# and prints the ArgoCD login + URLs. Run it from your machine, not the toolbox.
+# Host helper: writes a host-usable kubeconfig (rewrites the in-cluster host) + prints ArgoCD login.
 if [ -n "${TOOLBOX:-}" ]; then
   echo "access.sh is a host helper — run it on your machine, not inside the toolbox."
   exit 0
