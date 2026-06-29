@@ -9,7 +9,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      {{- include "quote-api.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "quote-api.name" . }}
   endpoints:
     - port: http
       path: /metrics

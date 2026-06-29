@@ -50,6 +50,17 @@ Semgrep **0 findings**, and a runtime smoke test (all four endpoints + the readi
 While there I also migrated the **deprecated** `@app.on_event("startup")` hook to FastAPI's current
 `lifespan` handler — another stale-API default the model reached for from memory.
 
+**Observability *looked* done but wasn't — the dashboard had "No data" panels.** The chart shipped a
+ServiceMonitor + a Grafana dashboard and `scripts/60` installed kube-prometheus-stack, so on paper Part 6
+was complete. Only when I actually opened Grafana under load did two of the four panels (request rate, p95
+latency) show **No data**. `kubectl` traced it: the ServiceMonitor selected on `app.kubernetes.io/instance`
+too, but `scripts/60` rendered it with `helm template qa …` (instance `qa`) while the app is deployed by
+ArgoCD with instance `quote-api-dev` — so the selector matched **no** Service and Prometheus scraped
+nothing (`quote_requests_total` was empty). Fixed by selecting on the **stable** `app.kubernetes.io/name`
+only; re-verified that the counter + latency histogram now appear in Prometheus and all four panels
+populate. The lesson the brief is testing: *"the manifests exist and `helm lint`s"* is not *"it works"* —
+the dashboard had to be looked at.
+
 **Two smaller corrections:**
 - The model first pinned tool versions from memory (kubectl 1.31, etc.). I checked the release pages and
   found the current stable set (kubectl/k3s 1.36, Helm 4, k6 v2); I also had to **override the k3d
