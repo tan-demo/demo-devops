@@ -51,13 +51,34 @@ _install_compose_plugin() {
     -o "$dst/docker-compose" && chmod +x "$dst/docker-compose"
 }
 
+# Start Docker Desktop on Windows WITHOUT hardcoding its install path (Program Files, drive
+# letter, locale and per-user installs all vary). preflight already verified `docker` is on
+# PATH, so the official `docker desktop` CLI (Docker Desktop 4.37+) is the most reliable, fully
+# path-agnostic trigger. Older Docker Desktop lacks that CLI, so fall back to locating the exe
+# relative to the docker binary (<root>/resources/bin/docker -> <root>/Docker Desktop.exe), then
+# the registry install path. Best-effort throughout — the caller still polls `docker info`.
+_start_docker_desktop_win() {
+  docker desktop start >/dev/null 2>&1 && return 0
+  _exe=""
+  _d="$(command -v docker 2>/dev/null)"
+  if [ -n "$_d" ]; then
+    _c="$(dirname "$(dirname "$(dirname "$_d")")")/Docker Desktop.exe"
+    [ -f "$_c" ] && _exe="$_c"
+  fi
+  if [ -z "$_exe" ] && _have powershell; then
+    _reg="$(powershell -NoProfile -Command "(Get-ItemProperty 'HKLM:\\SOFTWARE\\Docker Inc.\\Docker\\1.0' -EA SilentlyContinue).AppPath" 2>/dev/null | tr -d '\r')"
+    [ -n "$_reg" ] && [ -f "$_reg/Docker Desktop.exe" ] && _exe="$_reg/Docker Desktop.exe"
+  fi
+  [ -n "$_exe" ] && _have powershell && powershell -NoProfile -Command "Start-Process '$_exe'" >/dev/null 2>&1 || true
+}
+
 _start_daemon() {
   os="$1"
   echo ">> docker installed but daemon not reachable — trying to start it"
   case "$os" in
     macos) _have open && open -a Docker >/dev/null 2>&1 || true ;;
     linux|wsl) _sudo "systemctl start docker" 2>/dev/null || _sudo "service docker start" 2>/dev/null || true ;;
-    windows) _have powershell && powershell -Command "Start-Process 'Docker Desktop'" >/dev/null 2>&1 || true ;;
+    windows) _start_docker_desktop_win ;;
   esac
   i=0; while [ "$i" -lt 60 ]; do docker info >/dev/null 2>&1 && return 0; i=$((i + 1)); sleep 2; done
   return 1
