@@ -135,31 +135,33 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
 | `scripts/40-troubleshoot.sh` | applies broken manifests, then the fix, and runs `verify.sh` | Part 3 |
 | `scripts/50-validate-tf.sh` | Karpenter YAML dry-run + `terraform fmt/validate` (Cloudflare) | Part 5 |
 | `scripts/60-loadtest.sh` | installs kube-prometheus-stack, runs k6 through the Ingress, captures HPA scale-out to `loadtest/evidence/` | Part 6 |
-| `scripts/access.sh` | writes a host-usable kubeconfig + prints the ArgoCD login/URLs (run on the host) | to use kubectl / ArgoCD UI |
-| `scripts/destroy.sh` | deletes the k3d cluster, then `docker compose down` + removes the host kubeconfig (run on the host) | full teardown |
+| `scripts/access.sh` | merges a host-reachable `k3d-dev` context into `~/.kube/config` + prints the app URL & ArgoCD login (run on the host) | to use kubectl / ArgoCD UI |
+| `scripts/destroy.sh` | deletes the cluster, `docker compose down`, removes the `k3d-dev` context + app image (`FULL=1` also the toolbox image) | full teardown |
 
 ---
 
 ## Accessing the cluster & ArgoCD
 
 `run-all.sh` prints this at the end; you can also run it any time with **`./scripts/access.sh`**.
-The cluster and toolbox run inside Docker, so the in-cluster kubeconfig points at
-`host.docker.internal` (not resolvable from the host) — `access.sh` writes a host-usable copy.
 
-- **App** (already exposed): `curl http://localhost:8080/api/quote`
-- **kubectl from the host:**
+- **App** (exposed on the host): `curl http://localhost:8080/api/quote`
+- **kubectl — via the toolbox** (works for anyone, needs nothing on the host):
   ```bash
-  ./scripts/access.sh                       # writes ~/.kube/k3d-dev.yaml
-  export KUBECONFIG=~/.kube/k3d-dev.yaml
-  kubectl get nodes
+  docker compose exec toolbox kubectl get nodes
   ```
-  (Or skip the host setup entirely: `docker compose exec toolbox kubectl get pods -A`.)
-- **ArgoCD UI:**
+- **kubectl — from your host** (if you have `kubectl`): `access.sh` merges a host-reachable config into
+  `~/.kube/config` as context **`k3d-dev`** (it does *not* switch your current context):
   ```bash
-  export KUBECONFIG=~/.kube/k3d-dev.yaml
-  kubectl port-forward -n argocd svc/argocd-server 8081:443
+  kubectl --context k3d-dev get nodes
+  ```
+- **ArgoCD UI** (host kubectl):
+  ```bash
+  kubectl --context k3d-dev port-forward -n argocd svc/argocd-server 8081:443
   # browse https://localhost:8081 (accept the self-signed cert), login: admin / <printed password>
   ```
+
+`./scripts/destroy.sh` reverses all of it — deletes the cluster, `docker compose down`, removes the
+`k3d-dev` context from `~/.kube/config`, and the app image it built (`FULL=1` also drops the toolbox image).
 
 ---
 
