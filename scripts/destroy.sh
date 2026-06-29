@@ -10,8 +10,8 @@ fi
 . "$(dirname "$0")/_preflight.sh"
 preflight_host || exit $?
 
-CLUSTER="${CLUSTER:-devops}"
-KUBECONFIG_OUT="${KUBECONFIG_OUT:-$HOME/.kube/k3d-devops.yaml}"
+CLUSTER="${CLUSTER:-dev}"
+KUBECONFIG_OUT="${KUBECONFIG_OUT:-$HOME/.kube/k3d-dev.yaml}"
 
 echo ">> deleting the k3d cluster '$CLUSTER' (via the toolbox, while it is still up)"
 docker compose exec -T toolbox k3d cluster delete "$CLUSTER" 2>/dev/null || \

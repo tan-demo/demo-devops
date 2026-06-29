@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CLUSTER=devops
+CLUSTER=dev
 CONFIG=/workspace/toolbox/k3d-config.yaml
 KUBE=/kubeconfig/config
 

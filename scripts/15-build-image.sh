@@ -3,7 +3,7 @@ set -eu
 
 IMAGE="${IMAGE:-ghcr.io/tan-demo/quote-api}"
 TAG="${TAG:-dev}"
-CLUSTER="${CLUSTER:-devops}"
+CLUSTER="${CLUSTER:-dev}"
 
 cd /workspace
 echo ">> building ${IMAGE}:${TAG} from ./app/quote-api"

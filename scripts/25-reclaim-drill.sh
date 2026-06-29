@@ -2,7 +2,7 @@
 set -eu
 
 NS=quote-api
-URL="${URL:-http://k3d-devops-serverlb/api/quote}"
+URL="${URL:-http://k3d-dev-serverlb/api/quote}"
 APP_LABEL=app.kubernetes.io/name=quote-api
 
 fail() {
