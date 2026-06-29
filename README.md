@@ -1,5 +1,7 @@
 # quote-api — DevOps Take-Home
 
+[![ci](https://github.com/tan-demo/demo-devops/actions/workflows/ci.yml/badge.svg)](https://github.com/tan-demo/demo-devops/actions/workflows/ci.yml)
+
 A small HTTP quote API, shipped GitOps-style (ArgoCD) onto a local multi-node k3d cluster that
 simulates a mixed **spot / on-demand / GPU** nodepool environment.
 
@@ -20,7 +22,21 @@ curl http://localhost:8080/api/quote
 `docker compose up -d` is self-contained: it builds a toolbox image (kubectl/helm/terraform/k6),
 creates a k3d cluster with **4 worker nodes**, and runs `troubleshoot/prepare.sh` to label/taint
 them. `run-all.sh` then installs ArgoCD, deploys the app via an ArgoCD Application, and runs the
-remaining steps. Scripts are idempotent and bind-mounted into the toolbox.
+remaining steps (including the Part 2 reclaim drill). Scripts are idempotent and bind-mounted into
+the toolbox. The toolbox image **auto-detects** its arch, so this works on Intel and Apple Silicon
+with no env var.
+
+```bash
+# Part 6 (load test + Prometheus/Grafana) is opt-in — it installs the full kube-prometheus-stack:
+docker compose exec toolbox /workspace/scripts/60-loadtest.sh
+
+# Tear everything down (deletes the k3d cluster, then the toolbox + network):
+./scripts/destroy.sh
+```
+
+> **GitOps note:** ArgoCD syncs the **published `main`** of this repo, not your local working copy.
+> Local chart edits only reach the cluster after a push — or apply them directly for a quick test
+> with `helm template charts/quote-api | kubectl apply -f -`.
 
 ---
 
@@ -74,6 +90,7 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
 | `scripts/50-validate-tf.sh` | `terraform fmt -check` / `init -backend=false` / `validate` (Cloudflare) | Part 5 |
 | `scripts/60-loadtest.sh` | installs kube-prometheus-stack, runs k6 through the Ingress, captures HPA scale-out | Part 6 |
 | `scripts/access.sh` | writes a host-usable kubeconfig + prints the ArgoCD login/URLs (run on the host) | to use kubectl / ArgoCD UI |
+| `scripts/destroy.sh` | deletes the k3d cluster, then `docker compose down` + removes the host kubeconfig (run on the host) | full teardown |
 
 ---
 
