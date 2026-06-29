@@ -68,6 +68,7 @@ spec:
             matchLabels:
               {{- include "quote-api.selectorLabels" . | nindent 14 }}
         {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       containers:
         - name: quote-api
           image: {{ include "quote-api.image" . }}
@@ -94,6 +95,10 @@ spec:
               port: http
             initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sleep", "{{ .Values.lifecycle.preStopSleepSeconds }}"]
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
