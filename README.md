@@ -78,27 +78,9 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
 
 ### Bonus — how this runs in production on AWS
 
-```mermaid
-flowchart LR
-    users["Users"] --> cf["Cloudflare<br/>DNS + CDN + WAF<br/>cache: bypass /api/*"]
-    cf --> alb["ALB / AWS LB Controller"]
-    alb --> eks
+![quote-api in production on AWS](docs/aws-architecture.svg)
 
-    subgraph eks["EKS (Karpenter-provisioned)"]
-        quote["quote-api pods<br/>HPA + PDB"]
-        infer["GPU inference pods<br/>(do-not-disrupt)"]
-        np1["NodePool: spot (weight 100)"]
-        np2["NodePool: on-demand (fallback)"]
-        npg["NodePool: GPU spot+OD<br/>taint nvidia.com/gpu"]
-    end
-
-    np1 --> quote
-    np2 --> quote
-    npg --> infer
-    quote --> rds[("RDS (Multi-AZ)")]
-    eks --> obs["Prometheus + Grafana<br/>+ Alertmanager"]
-    eso["External Secrets Operator<br/>← AWS Secrets Manager"] --> eks
-```
+> Editable source: [`docs/aws-architecture.drawio`](docs/aws-architecture.drawio) (open in [draw.io](https://app.diagrams.net/)).
 
 ---
 
