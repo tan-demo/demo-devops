@@ -21,10 +21,10 @@ curl http://localhost:8080/api/quote
 
 `docker compose up -d` is self-contained: it builds a toolbox image (kubectl/helm/terraform/k6),
 creates a k3d cluster with **4 worker nodes**, and runs `troubleshoot/prepare.sh` to label/taint
-them. `run-all.sh` then installs ArgoCD, deploys the app via an ArgoCD Application, and runs the
-remaining steps (including the Part 2 reclaim drill). Scripts are idempotent and bind-mounted into
-the toolbox. The toolbox image **auto-detects** its arch, so this works on Intel and Apple Silicon
-with no env var.
+them. `run-all.sh` waits for bootstrap to finish, then installs ArgoCD, deploys the app via an
+ArgoCD Application, and runs the remaining steps (including the Part 2 reclaim drill). Scripts are
+idempotent and bind-mounted into the toolbox. The toolbox image **auto-detects** its arch, so this
+works on Intel and Apple Silicon with no env var.
 
 ```bash
 # Part 6 (load test + Prometheus/Grafana) is opt-in — it installs the full kube-prometheus-stack:
@@ -41,6 +41,17 @@ docker compose exec toolbox /workspace/scripts/60-loadtest.sh
 ---
 
 ## Architecture
+
+```mermaid
+flowchart LR
+  compose["docker compose"] --> toolbox[toolbox]
+  toolbox --> k3d["k3d cluster\n1 server + 4 agents"]
+  k3d --> pools["nodepools\n2 spot · 1 on-demand · 1 GPU"]
+  toolbox --> argocd[ArgoCD]
+  argocd --> chart["Helm chart\nquote-api"]
+  chart --> app[quote-api pods]
+  app --> ingress["Ingress\nlocalhost:8080"]
+```
 
 ![local architecture](docs/local-architecture.svg)
 
@@ -90,9 +101,9 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
 | `scripts/15-build-image.sh` | builds the app image and `k3d image import`s it for offline runs | before deploy |
 | `scripts/20-deploy.sh` | applies the AppProject + `applications-dev` app-of-apps → ArgoCD deploys quote-api | deploy |
 | `scripts/25-reclaim-drill.sh` | drains a spot node that hosts `quote-api`, asserts the service stays up and placement survives, then uncordons | resilience demo |
-| `scripts/40-troubleshoot.sh` | applies `troubleshoot/fixed-app.yaml` and runs `verify.sh` | Part 3 |
-| `scripts/50-validate-tf.sh` | `terraform fmt -check` / `init -backend=false` / `validate` (Cloudflare) | Part 5 |
-| `scripts/60-loadtest.sh` | installs kube-prometheus-stack, runs k6 through the Ingress, captures HPA scale-out | Part 6 |
+| `scripts/40-troubleshoot.sh` | applies broken manifests, then the fix, and runs `verify.sh` | Part 3 |
+| `scripts/50-validate-tf.sh` | Karpenter YAML dry-run + `terraform fmt/validate` (Cloudflare) | Part 5 |
+| `scripts/60-loadtest.sh` | installs kube-prometheus-stack, runs k6 through the Ingress, captures HPA scale-out to `loadtest/evidence/` | Part 6 |
 | `scripts/access.sh` | writes a host-usable kubeconfig + prints the ArgoCD login/URLs (run on the host) | to use kubectl / ArgoCD UI |
 | `scripts/destroy.sh` | deletes the k3d cluster, then `docker compose down` + removes the host kubeconfig (run on the host) | full teardown |
 
@@ -150,6 +161,8 @@ The cluster and toolbox run inside Docker, so the in-cluster kubeconfig points a
 
 - **Port 8080 in use.** The Ingress is published on host `8080`. Change the `ports` mapping in
   `toolbox/k3d-config.yaml` if it clashes, then `docker compose up -d` again.
+- **First boot is slow.** k3d cluster creation takes a few minutes; `run-all.sh` waits automatically
+  (or poll: `docker compose exec toolbox test -f /kubeconfig/bootstrap.done`).
 - **Memory.** A 5-node k3d cluster + ArgoCD + kube-prometheus-stack wants ~6–8 GB given to Docker.
   If pods stay `Pending`, raise Docker Desktop's memory, or skip `scripts/60` (the heavy step).
 - **Architecture.** The toolbox image **auto-detects** the build arch (`uname -m` → `amd64`/`arm64`),

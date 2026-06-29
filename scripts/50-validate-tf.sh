@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 set -eu
 
-echo ">> Karpenter manifests parse (yq)"
+echo ">> Karpenter manifests (kubectl client dry-run)"
 for f in /workspace/iac/local/karpenter/*.yaml; do
-  kind=$(yq eval '.kind' "$f")
-  echo "   $(basename "$f"): $kind"
+  echo "   $(basename "$f")"
+  kubectl apply --dry-run=client -f "$f" >/dev/null
 done
 
 cd /workspace/iac/local/cloudflare

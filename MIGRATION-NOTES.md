@@ -10,7 +10,7 @@ and the reason.
 |---|---|---|
 | AWS keys hard-coded in `variables:` | Removed entirely; secrets via GitHub Secrets / OIDC | Credentials never belong in pipeline source. Committing them is an instant fail. |
 | `sonar_check` with `allow_failure: true` | **Semgrep** SAST with `--error`; `build` job `needs: sast` | A quality job that can't fail is decoration. Now a finding hard-fails and blocks the build. |
-| `unit_test`: `npm test \|\| echo "flaky, continuing"` | A failing step fails the job (no `\|\|` swallow) | Swallowing test failures hides regressions. |
+| `unit_test`: `npm test \|\| echo "flaky, continuing"` | **pytest** on the FastAPI app (`test_main.py`); failures hard-fail | Legacy pipeline tested Node against a service that is Python; pytest covers the four HTTP endpoints without swallowing failures. |
 | `build_image` pushes `:latest` only | `docker/metadata-action` tags by **git SHA** (`sha-<sha>`), `latest` only on default branch | Immutable, traceable image tags. A floating `latest` is not reproducible. |
 | `docker:20.10-dind` (privileged DinD) | `docker/setup-buildx-action` (Buildx) | No privileged Docker-in-Docker. |
 | `deploy_prod`: manual `kubectl set image ...:latest` with `KUBECONFIG_CONTENT` | **Removed from CI**; deploy is GitOps via ArgoCD | CI builds + pushes an immutable image; ArgoCD syncs it. No cluster credentials in CI; no imperative drift. |

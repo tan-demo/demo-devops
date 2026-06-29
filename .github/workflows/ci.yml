@@ -14,6 +14,19 @@ env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/quote-api
 
 jobs:
+  test:
+    name: Unit tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install deps + run pytest
+        run: |
+          pip install -r app/quote-api/requirements.txt httpx pytest
+          pytest app/quote-api/test_main.py -q
+
   sast:
     name: SAST (Semgrep, hard-fail)
     runs-on: ubuntu-latest
@@ -33,7 +46,7 @@ jobs:
 
   build:
     name: Build, scan, push
-    needs: sast
+    needs: [test, sast]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

@@ -33,5 +33,6 @@ sh /workspace/troubleshoot/prepare.sh
 
 log "DONE — cluster ready. Toolbox staying up."
 kubectl get nodes -L acme.io/capacity -L acme.io/node-type || true
+touch /kubeconfig/bootstrap.done
 
 tail -f /dev/null

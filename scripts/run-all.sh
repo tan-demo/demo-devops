@@ -3,8 +3,25 @@ set -euo pipefail
 
 # Runs every numbered step in order. Safe to re-run (each step is idempotent).
 # On the host this re-execs inside the toolbox container (which has kubectl/helm/k6).
+wait_for_bootstrap() {
+  echo ">> waiting for k3d bootstrap (first boot may take a few minutes)..."
+  i=0
+  while [ "$i" -lt 120 ]; do
+    if docker compose exec -T toolbox test -f /kubeconfig/bootstrap.done 2>/dev/null; then
+      echo ">> cluster bootstrap complete"
+      return 0
+    fi
+    i=$((i + 1))
+    sleep 5
+  done
+  echo "FAIL: cluster bootstrap did not finish within 10 minutes" >&2
+  echo "       check: docker compose logs toolbox" >&2
+  return 1
+}
+
 if [ -z "${TOOLBOX:-}" ]; then
   echo ">> not in toolbox — running all steps inside the toolbox container"
+  wait_for_bootstrap
   rc=0
   docker compose exec -T toolbox /workspace/scripts/run-all.sh || rc=$?
   echo ""
