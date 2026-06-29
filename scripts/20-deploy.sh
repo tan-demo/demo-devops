@@ -22,14 +22,14 @@ else
   echo ">> no GITHUB_TOKEN — assuming repo is public (no credentials needed)"
 fi
 
-echo ">> applying AppProject + root app-of-apps"
+echo ">> applying AppProject + applications-dev app-of-apps"
 kubectl apply -f argocd/project.yaml
-kubectl apply -f argocd/root-app.yaml
+kubectl apply -f argocd/applications-dev.yaml
 
-echo ">> waiting for quote-api-dev Application to be created by root app..."
+echo ">> waiting for quote-api-dev Application to be created by applications-dev..."
 i=0
 until kubectl get application quote-api-dev -n "$NS" >/dev/null 2>&1; do
-  i=$((i + 1)); [ "$i" -gt 60 ] && { echo "root app did not create quote-api-dev"; break; }
+  i=$((i + 1)); [ "$i" -gt 60 ] && { echo "applications-dev did not create quote-api-dev"; break; }
   sleep 3
 done
 
