@@ -37,7 +37,7 @@ background during the k6 run. Fresh logs land in:
 - `loadtest/evidence/pod-events.log`
 
 A representative capture from a prior run is committed as
-`loadtest/evidence/hpa-scale-out.sample.log` (3 → 6 replicas under load).
+`loadtest/evidence/hpa-scale-out.sample.txt` (3 → 6 replicas under load).
 
 Timeline from that run:
 17:29  cpu: 3%/60%    replicas 3   (baseline)
