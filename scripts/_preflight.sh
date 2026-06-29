@@ -14,6 +14,12 @@
 # automated from a shell (macOS/Windows Docker Desktop is a licensed GUI app), it falls
 # back to precise per-OS instructions instead of failing cryptically.
 
+# Windows Git Bash (MSYS) rewrites /unix/paths in command arguments into Windows paths, which
+# would mangle `docker compose exec -T toolbox /workspace/...` and `/kubeconfig/...`. Disable that
+# for the host scripts that source this file. Harmless no-op on Linux/macOS/WSL.
+MSYS_NO_PATHCONV=1; export MSYS_NO_PATHCONV
+MSYS2_ARG_CONV_EXCL='*'; export MSYS2_ARG_CONV_EXCL
+
 PREFLIGHT_AUTO_INSTALL="${PREFLIGHT_AUTO_INSTALL:-1}"
 COMPOSE_PLUGIN_VERSION="${COMPOSE_PLUGIN_VERSION:-v2.32.4}"
 

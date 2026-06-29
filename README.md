@@ -17,8 +17,7 @@ Everything else — kubectl, helm, terraform, k6, k3d, argocd — lives inside t
 
 The host scripts source a **preflight** (`scripts/_preflight.sh`) that:
 
-- **detects the OS** with `uname` — Linux, **WSL2**, macOS, or **Windows Git Bash** (run the scripts
-  from WSL2 or Git Bash on Windows; Docker Desktop's WSL2 backend exposes `docker` there);
+- **detects the OS** with `uname` — Linux, **WSL2**, macOS, or **Windows Git Bash**;
 - **auto-installs what's missing** where it's safe: the Compose v2 plugin (user-local, no sudo), and
   Docker itself via the platform's own package manager (`get.docker.com` on Linux, `brew --cask` on
   macOS, `winget` on Windows). Set `PREFLIGHT_AUTO_INSTALL=0` for check-only;
@@ -27,6 +26,13 @@ The host scripts source a **preflight** (`scripts/_preflight.sh`) that:
   **precise per-OS instructions** instead of dying with a cryptic mid-run error.
 
 If everything is already present, it just continues — so the Golden Rule runs unchanged.
+
+**Windows:** run from **WSL2** — that's the recommended and validated path (it *is* Linux, and Docker
+Desktop's WSL2 backend exposes `docker` there). **Git Bash** also works: the repo ships a `.gitattributes`
+that forces LF line endings (so the `.sh` files don't break on a CRLF checkout) and the preflight sets
+`MSYS_NO_PATHCONV` (so `/workspace`/`/kubeconfig` args aren't rewritten into Windows paths). The harness
+itself is OS-agnostic — it all runs inside Linux containers; only the thin host wrappper differs, and the
+preflight is what makes that portable. (Validated on macOS + Linux here; on Windows use WSL2.)
 
 ```bash
 git clone https://github.com/tan-demo/demo-devops && cd demo-devops
