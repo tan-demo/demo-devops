@@ -1,9 +1,8 @@
 #!/usr/bin/env sh
-# Sourced by host helpers (run-all.sh, access.sh, destroy.sh). PREFLIGHT_AUTO_INSTALL=0 = check-only.
-# Targets the Golden Rule's shell: macOS / Linux / WSL2.
+# Sourced by host helpers (run-all/access/destroy). PREFLIGHT_AUTO_INSTALL=0 = check-only.
 
 PREFLIGHT_AUTO_INSTALL="${PREFLIGHT_AUTO_INSTALL:-1}"
-COMPOSE_PLUGIN_VERSION="${COMPOSE_PLUGIN_VERSION:-v2.32.4}"
+COMPOSE_PLUGIN_VERSION="${COMPOSE_PLUGIN_VERSION:-v5.2.0}"
 
 _have() { command -v "$1" >/dev/null 2>&1; }
 
@@ -89,8 +88,7 @@ require_toolbox_running() {
   return 0
 }
 
-# The in-cluster tools live inside the toolbox image (baked by toolbox/Dockerfile), not on the host.
-# Verify they're present; if not, the image is the source of truth, so the fix is a rebuild.
+# Verify the toolbox image carries the in-cluster tools; if missing, rebuild the image.
 require_toolbox_tools() {
   miss=$(docker compose exec -T toolbox sh -c \
     'for t in kubectl helm terraform k6 k3d argocd jq yq git curl; do command -v "$t" >/dev/null 2>&1 || echo "$t"; done' 2>/dev/null)
