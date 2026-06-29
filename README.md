@@ -19,7 +19,9 @@ The host scripts source a **preflight** (`scripts/_preflight.sh`) that detects t
 auto-installs anything missing where it's safe (the Compose v2 plugin user-local; Docker via
 `get.docker.com`/`brew --cask`), starts the daemon if it's down, and otherwise prints the install
 command — so a missing dependency never surfaces as a cryptic mid-run error. `PREFLIGHT_AUTO_INSTALL=0`
-makes it check-only. If everything is present it just continues.
+makes it check-only. If everything is present it just continues. It then verifies the toolbox image
+actually carries the in-cluster tools (kubectl/helm/terraform/k6/k3d/argocd) and, if not, tells you to
+rebuild it — those live in the image, not on the host.
 
 Targets macOS / Linux (the Golden Rule's shell). On Windows, run it from **WSL2** — that's Linux, and
 Docker Desktop's WSL2 backend exposes `docker` there.

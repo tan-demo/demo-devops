@@ -88,3 +88,16 @@ require_toolbox_running() {
   fi
   return 0
 }
+
+# The in-cluster tools live inside the toolbox image (baked by toolbox/Dockerfile), not on the host.
+# Verify they're present; if not, the image is the source of truth, so the fix is a rebuild.
+require_toolbox_tools() {
+  miss=$(docker compose exec -T toolbox sh -c \
+    'for t in kubectl helm terraform k6 k3d argocd jq yq git curl; do command -v "$t" >/dev/null 2>&1 || echo "$t"; done' 2>/dev/null)
+  if [ -n "$miss" ]; then
+    echo "ERROR: the toolbox image is missing:" $miss >&2
+    echo "       rebuild it: docker compose build --no-cache toolbox" >&2
+    return 1
+  fi
+  return 0
+}
