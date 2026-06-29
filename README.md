@@ -106,7 +106,7 @@ flowchart LR
 
 | Script | Does | When |
 |--------|------|------|
-| `scripts/run-all.sh` | runs every numbered step in order (re-execs into the toolbox) | after `docker compose up -d` |
+| `scripts/run-all.sh` | runs every numbered step in the toolbox, then sets up local access (kubeconfig + ArgoCD) | after `docker compose up -d` |
 | `scripts/10-install-argocd.sh` | installs the ArgoCD controller (server-side apply) | bootstrap |
 | `scripts/15-build-image.sh` | builds the app image and `k3d image import`s it for offline runs | before deploy |
 | `scripts/20-deploy.sh` | applies the AppProject + root app-of-apps → ArgoCD deploys quote-api | deploy |
@@ -114,6 +114,30 @@ flowchart LR
 | `scripts/40-troubleshoot.sh` | applies `troubleshoot/fixed-app.yaml` and runs `verify.sh` | Part 3 |
 | `scripts/50-validate-tf.sh` | `terraform fmt -check` / `init -backend=false` / `validate` (Cloudflare) | Part 5 |
 | `scripts/60-loadtest.sh` | installs kube-prometheus-stack, runs k6 through the Ingress, captures HPA scale-out | Part 6 |
+| `scripts/access.sh` | writes a host-usable kubeconfig + prints the ArgoCD login/URLs (run on the host) | to use kubectl / ArgoCD UI |
+
+---
+
+## Accessing the cluster & ArgoCD
+
+`run-all.sh` prints this at the end; you can also run it any time with **`./scripts/access.sh`**.
+The cluster and toolbox run inside Docker, so the in-cluster kubeconfig points at
+`host.docker.internal` (not resolvable from the host) — `access.sh` writes a host-usable copy.
+
+- **App** (already exposed): `curl http://localhost:8080/api/quote`
+- **kubectl from the host:**
+  ```bash
+  ./scripts/access.sh                       # writes ~/.kube/k3d-devops.yaml
+  export KUBECONFIG=~/.kube/k3d-devops.yaml
+  kubectl get nodes
+  ```
+  (Or skip the host setup entirely: `docker compose exec toolbox kubectl get pods -A`.)
+- **ArgoCD UI:**
+  ```bash
+  export KUBECONFIG=~/.kube/k3d-devops.yaml
+  kubectl port-forward -n argocd svc/argocd-server 8081:443
+  # browse https://localhost:8081 (accept the self-signed cert), login: admin / <printed password>
+  ```
 
 ---
 
