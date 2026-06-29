@@ -11,7 +11,6 @@ fi
 preflight_host || exit $?
 
 CLUSTER="${CLUSTER:-dev}"
-KUBECONFIG_OUT="${KUBECONFIG_OUT:-$HOME/.kube/k3d-dev.yaml}"
 
 echo ">> deleting the k3d cluster '$CLUSTER' (via the toolbox, while it is still up)"
 docker compose exec -T toolbox k3d cluster delete "$CLUSTER" 2>/dev/null || \
@@ -20,8 +19,23 @@ docker compose exec -T toolbox k3d cluster delete "$CLUSTER" 2>/dev/null || \
 echo ">> stopping the toolbox + removing the compose network/volumes"
 docker compose down -v --remove-orphans
 
-echo ">> removing the host kubeconfig ($KUBECONFIG_OUT)"
-rm -f "$KUBECONFIG_OUT"
+echo ">> removing the k3d-$CLUSTER context from ~/.kube/config"
+if command -v kubectl >/dev/null 2>&1; then
+  kubectl config delete-context "k3d-$CLUSTER" 2>/dev/null || true
+  kubectl config delete-cluster "k3d-$CLUSTER" 2>/dev/null || true
+  kubectl config delete-user "admin@k3d-$CLUSTER" 2>/dev/null || true
+fi
+rm -f "$HOME/.kube/k3d-$CLUSTER.yaml"
 
-echo ">> done. The toolbox image (demo-devops-toolbox:local) is kept for a fast re-up;"
-echo "   run 'docker rmi demo-devops-toolbox:local' to remove it too."
+APP_IMAGE="${IMAGE:-ghcr.io/tan-demo/quote-api}:${TAG:-dev}"
+echo ">> removing the app image built by run-all ($APP_IMAGE)"
+docker rmi "$APP_IMAGE" 2>/dev/null || true
+
+if [ "${FULL:-0}" = 1 ]; then
+  echo ">> FULL=1 — removing the toolbox image too"
+  docker rmi demo-devops-toolbox:local 2>/dev/null || true
+  echo ">> done — everything created by the harness is gone."
+else
+  echo ">> done. The toolbox image (demo-devops-toolbox:local) is kept for a fast re-up;"
+  echo "   run 'FULL=1 ./scripts/destroy.sh' (or 'docker rmi demo-devops-toolbox:local') to remove it too."
+fi
