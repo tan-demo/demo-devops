@@ -3,7 +3,14 @@ name: ci
 on:
   push:
     branches: [main]
+    paths:
+      - "app/quote-api/**"
+      - ".github/workflows/ci.yml"
   pull_request:
+    paths:
+      - "app/quote-api/**"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read

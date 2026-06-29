@@ -102,7 +102,7 @@ Removed it; a diagram is a claim — an inaccurate box is worse than a missing o
 | `scripts/25-reclaim-drill.sh` | Placement reschedule under spot drain |
 | `troubleshoot/verify.sh` | Part 3 fixes without cheating NetworkPolicy/nodes |
 | `scripts/60-loadtest.sh` | k6 thresholds, HPA > 3, placement at scale |
-| CI: Semgrep + pytest + Trivy + cosign | SAST, regressions, CVEs, signed image |
+| CI: Semgrep + pytest + Trivy + cosign | SAST, regressions, CVEs, signed image — **only when `app/quote-api` changes** (path filter) |
 | `scripts/50-validate-tf.sh` | Karpenter dry-run + Cloudflare `terraform validate` |
 | Grafana under load | Scrapes and dashboards actually work |
 
