@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1250 700" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5b6472"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1250" height="700" fill="#ffffff"/>
+  <text x="36" y="42" font-size="20" font-weight="700" fill="#1b2430">quote-api in production on AWS</text>
+  <text x="36" y="64" font-size="12" fill="#55606e">Cloudflare edge &#8594; ALB &#8594; EKS (Karpenter: spot / on-demand / GPU) &#8594; RDS, with GitOps + observability + ESO</text>
+
+  <!-- EKS group (drawn first so it sits behind its children) -->
+  <rect x="555" y="100" width="455" height="560" rx="8" fill="#f6f3ff" stroke="#7d3cf8" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <text x="575" y="126" font-size="14" font-weight="700" fill="#7d3cf8">Amazon EKS</text>
+  <text x="575" y="144" font-size="11" fill="#55606e">Karpenter-provisioned nodes &#183; GitOps via ArgoCD</text>
+
+  <!-- Users -->
+  <rect x="30" y="318" width="110" height="60" rx="8" fill="#ffffff" stroke="#55606e" stroke-width="1.6"/>
+  <text x="85" y="345" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">Users</text>
+  <text x="85" y="362" text-anchor="middle" font-size="11" fill="#55606e">web / mobile</text>
+
+  <!-- Cloudflare -->
+  <rect x="175" y="300" width="180" height="96" rx="8" fill="#ffffff" stroke="#f6821f" stroke-width="1.6"/>
+  <text x="265" y="328" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">Cloudflare</text>
+  <text x="265" y="347" text-anchor="middle" font-size="11" fill="#55606e">DNS &#183; CDN &#183; WAF</text>
+  <text x="265" y="364" text-anchor="middle" font-size="11" fill="#55606e">cache static aggressively</text>
+  <text x="265" y="381" text-anchor="middle" font-size="11" fill="#55606e">bypass /api/*</text>
+
+  <!-- ALB -->
+  <rect x="390" y="318" width="120" height="60" rx="8" fill="#ffffff" stroke="#ff9900" stroke-width="1.6"/>
+  <text x="450" y="343" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">ALB</text>
+  <text x="450" y="361" text-anchor="middle" font-size="11" fill="#55606e">AWS LB Controller</text>
+
+  <!-- quote-api pods -->
+  <rect x="585" y="165" width="185" height="76" rx="8" fill="#ffffff" stroke="#2e7d32" stroke-width="1.6"/>
+  <text x="677" y="192" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">quote-api pods</text>
+  <text x="677" y="210" text-anchor="middle" font-size="11" fill="#55606e">HPA (3 &#8594; 6 on CPU)</text>
+  <text x="677" y="226" text-anchor="middle" font-size="11" fill="#55606e">PDB &#183; non-root &#183; RO rootfs</text>
+
+  <!-- GPU inference pods -->
+  <rect x="795" y="165" width="185" height="76" rx="8" fill="#ffffff" stroke="#2e7d32" stroke-width="1.6"/>
+  <text x="887" y="192" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">GPU inference pods</text>
+  <text x="887" y="210" text-anchor="middle" font-size="11" fill="#55606e">tolerate nvidia.com/gpu</text>
+  <text x="887" y="226" text-anchor="middle" font-size="11" fill="#55606e">karpenter.sh/do-not-disrupt</text>
+
+  <!-- NodePool spot -->
+  <rect x="585" y="320" width="185" height="56" rx="8" fill="#ffffff" stroke="#1a73e8" stroke-width="1.6"/>
+  <text x="677" y="344" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">NodePool: spot</text>
+  <text x="677" y="362" text-anchor="middle" font-size="11" fill="#55606e">weight 100 (preferred)</text>
+
+  <!-- NodePool on-demand -->
+  <rect x="585" y="392" width="185" height="56" rx="8" fill="#ffffff" stroke="#1a73e8" stroke-width="1.6"/>
+  <text x="677" y="416" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">NodePool: on-demand</text>
+  <text x="677" y="434" text-anchor="middle" font-size="11" fill="#55606e">fallback (availability)</text>
+
+  <!-- NodePool GPU -->
+  <rect x="795" y="320" width="185" height="92" rx="8" fill="#ffffff" stroke="#1a73e8" stroke-width="1.6"/>
+  <text x="887" y="344" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">NodePool: GPU</text>
+  <text x="887" y="362" text-anchor="middle" font-size="11" fill="#55606e">spot preferred + on-demand</text>
+  <text x="887" y="379" text-anchor="middle" font-size="11" fill="#55606e">taint nvidia.com/gpu</text>
+  <text x="887" y="396" text-anchor="middle" font-size="11" fill="#55606e">consolidation: WhenEmpty</text>
+
+  <!-- ESO -->
+  <rect x="585" y="478" width="225" height="60" rx="8" fill="#ffffff" stroke="#c7300b" stroke-width="1.6"/>
+  <text x="697" y="503" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">External Secrets Operator</text>
+  <text x="697" y="521" text-anchor="middle" font-size="11" fill="#55606e">IRSA / Pod Identity (no static creds)</text>
+
+  <!-- RDS -->
+  <rect x="1045" y="170" width="170" height="70" rx="8" fill="#ffffff" stroke="#3b48cc" stroke-width="1.6"/>
+  <text x="1130" y="197" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">Amazon RDS</text>
+  <text x="1130" y="215" text-anchor="middle" font-size="11" fill="#55606e">PostgreSQL &#183; Multi-AZ</text>
+
+  <!-- Observability -->
+  <rect x="1045" y="320" width="170" height="92" rx="8" fill="#ffffff" stroke="#e6522c" stroke-width="1.6"/>
+  <text x="1130" y="346" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">Observability</text>
+  <text x="1130" y="364" text-anchor="middle" font-size="11" fill="#55606e">Prometheus + Grafana</text>
+  <text x="1130" y="381" text-anchor="middle" font-size="11" fill="#55606e">Alertmanager</text>
+  <text x="1130" y="398" text-anchor="middle" font-size="11" fill="#55606e">scrapes /metrics</text>
+
+  <!-- Secrets Manager -->
+  <rect x="1045" y="478" width="170" height="60" rx="8" fill="#ffffff" stroke="#c7300b" stroke-width="1.6"/>
+  <text x="1130" y="503" text-anchor="middle" font-size="13" font-weight="700" fill="#1b2430">AWS Secrets Manager</text>
+  <text x="1130" y="521" text-anchor="middle" font-size="11" fill="#55606e">source of truth</text>
+
+  <!-- edges -->
+  <path d="M140,348 L172,348" stroke="#5b6472" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M355,348 L387,348" stroke="#5b6472" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M510,346 C535,346 552,250 582,212" stroke="#5b6472" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <text x="516" y="300" font-size="10" fill="#5b6472">HTTPS</text>
+
+  <path d="M677,320 L677,245" stroke="#5b6472" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M735,392 C775,392 770,300 720,247" stroke="#5b6472" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <path d="M887,320 L887,245" stroke="#5b6472" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <text x="690" y="296" font-size="10" fill="#5b6472">schedule</text>
+
+  <path d="M770,200 L1043,200" stroke="#5b6472" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <text x="872" y="193" font-size="10" fill="#5b6472">app data</text>
+
+  <path d="M1012,366 L1043,366" stroke="#5b6472" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <text x="1010" y="358" font-size="10" fill="#5b6472">scrape</text>
+
+  <path d="M1043,508 L813,508" stroke="#5b6472" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
+  <text x="905" y="501" font-size="10" fill="#5b6472">sync secrets</text>
+</svg>

@@ -1,0 +1,32 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram name="aws-production" id="aws-prod">
+    <mxGraphModel dx="1250" dy="700" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1250" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="eks" value="Amazon EKS&#10;Karpenter-provisioned nodes · GitOps via ArgoCD" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f6f3ff;strokeColor=#7d3cf8;verticalAlign=top;align=left;spacingLeft=12;spacingTop=8;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="555" y="100" width="455" height="560" as="geometry"/></mxCell>
+        <mxCell id="u" value="Users&#10;web / mobile" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#55606e;" vertex="1" parent="1"><mxGeometry x="30" y="318" width="110" height="60" as="geometry"/></mxCell>
+        <mxCell id="cf" value="Cloudflare&#10;DNS · CDN · WAF&#10;cache static · bypass /api/*" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#f6821f;" vertex="1" parent="1"><mxGeometry x="175" y="300" width="180" height="96" as="geometry"/></mxCell>
+        <mxCell id="alb" value="ALB&#10;AWS LB Controller" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#ff9900;" vertex="1" parent="1"><mxGeometry x="390" y="318" width="120" height="60" as="geometry"/></mxCell>
+        <mxCell id="qa" value="quote-api pods&#10;HPA (3→6 on CPU)&#10;PDB · non-root · RO rootfs" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#2e7d32;" vertex="1" parent="1"><mxGeometry x="585" y="165" width="185" height="76" as="geometry"/></mxCell>
+        <mxCell id="gpu" value="GPU inference pods&#10;tolerate nvidia.com/gpu&#10;karpenter.sh/do-not-disrupt" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#2e7d32;" vertex="1" parent="1"><mxGeometry x="795" y="165" width="185" height="76" as="geometry"/></mxCell>
+        <mxCell id="nps" value="NodePool: spot&#10;weight 100 (preferred)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1a73e8;" vertex="1" parent="1"><mxGeometry x="585" y="320" width="185" height="56" as="geometry"/></mxCell>
+        <mxCell id="npod" value="NodePool: on-demand&#10;fallback (availability)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1a73e8;" vertex="1" parent="1"><mxGeometry x="585" y="392" width="185" height="56" as="geometry"/></mxCell>
+        <mxCell id="npg" value="NodePool: GPU&#10;spot + on-demand&#10;taint nvidia.com/gpu&#10;consolidation: WhenEmpty" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#1a73e8;" vertex="1" parent="1"><mxGeometry x="795" y="320" width="185" height="92" as="geometry"/></mxCell>
+        <mxCell id="eso" value="External Secrets Operator&#10;IRSA / Pod Identity (no static creds)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#c7300b;" vertex="1" parent="1"><mxGeometry x="585" y="478" width="225" height="60" as="geometry"/></mxCell>
+        <mxCell id="rds" value="Amazon RDS&#10;PostgreSQL · Multi-AZ" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#3b48cc;" vertex="1" parent="1"><mxGeometry x="1045" y="170" width="170" height="70" as="geometry"/></mxCell>
+        <mxCell id="obs" value="Observability&#10;Prometheus + Grafana&#10;Alertmanager · scrapes /metrics" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#e6522c;" vertex="1" parent="1"><mxGeometry x="1045" y="320" width="170" height="92" as="geometry"/></mxCell>
+        <mxCell id="sm" value="AWS Secrets Manager&#10;source of truth" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#c7300b;" vertex="1" parent="1"><mxGeometry x="1045" y="478" width="170" height="60" as="geometry"/></mxCell>
+        <mxCell id="e1" style="endArrow=classic;html=1;" edge="1" parent="1" source="u" target="cf"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="endArrow=classic;html=1;" edge="1" parent="1" source="cf" target="alb"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="HTTPS" style="endArrow=classic;html=1;" edge="1" parent="1" source="alb" target="qa"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" style="endArrow=classic;html=1;" edge="1" parent="1" source="nps" target="qa"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" style="endArrow=classic;html=1;" edge="1" parent="1" source="npod" target="qa"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="endArrow=classic;html=1;" edge="1" parent="1" source="npg" target="gpu"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" value="app data" style="endArrow=classic;html=1;" edge="1" parent="1" source="qa" target="rds"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" value="scrape" style="endArrow=classic;html=1;" edge="1" parent="1" source="obs" target="eks"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" value="sync secrets" style="endArrow=classic;html=1;" edge="1" parent="1" source="sm" target="eso"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
