@@ -33,8 +33,27 @@ until kubectl get application quote-api-dev -n "$NS" >/dev/null 2>&1; do
   sleep 3
 done
 
+# Nudge ArgoCD to reconcile now instead of waiting for the (3m default) interval,
+# so the child app syncs promptly on a fresh cluster.
+kubectl annotate application quote-api-dev -n "$NS" \
+  argocd.argoproj.io/refresh=normal --overwrite >/dev/null 2>&1 || true
+
+echo ">> waiting for ArgoCD to sync the chart (quote-api deployment to appear)..."
+i=0
+until kubectl get deployment quote-api -n quote-api >/dev/null 2>&1; do
+  i=$((i + 1)); [ "$i" -gt 100 ] && { echo "quote-api deployment was not created by ArgoCD in time"; break; }
+  sleep 3
+done
+
 echo ">> waiting for quote-api to roll out..."
 kubectl rollout status deployment/quote-api -n quote-api --timeout=180s || true
+
+echo ">> waiting for quote-api-dev to be Synced + Healthy..."
+i=0
+until [ "$(kubectl get application quote-api-dev -n "$NS" -o jsonpath='{.status.sync.status}/{.status.health.status}' 2>/dev/null)" = "Synced/Healthy" ]; do
+  i=$((i + 1)); [ "$i" -gt 40 ] && break
+  sleep 3
+done
 
 echo ">> ArgoCD applications:"
 kubectl get applications -n "$NS"
