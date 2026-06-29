@@ -7,7 +7,6 @@ ARG TERRAFORM_VERSION=1.15.7
 ARG K6_VERSION=v2.0.0
 ARG K3D_VERSION=v5.9.0
 ARG ARGOCD_VERSION=v3.4.4
-ARG TERRAGRUNT_VERSION=v1.0.8
 
 RUN apk add --no-cache \
         bash curl git jq yq openssl ca-certificates unzip tar \
@@ -32,9 +31,6 @@ RUN set -eux; \
     curl -fsSL -o /usr/local/bin/argocd \
         "https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-${TARGETARCH}"; \
     chmod +x /usr/local/bin/argocd; \
-    curl -fsSL -o /usr/local/bin/terragrunt \
-        "https://github.com/gruntwork-io/terragrunt/releases/download/${TERRAGRUNT_VERSION}/terragrunt_linux_${TARGETARCH}"; \
-    chmod +x /usr/local/bin/terragrunt; \
     rm -rf /tmp/*
 
 ENV TOOLBOX=1
