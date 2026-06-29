@@ -21,6 +21,7 @@ docker compose down -v --remove-orphans
 
 echo ">> removing the k3d-$CLUSTER context from ~/.kube/config"
 if command -v kubectl >/dev/null 2>&1; then
+  [ "$(kubectl config current-context 2>/dev/null)" = "k3d-$CLUSTER" ] && kubectl config unset current-context >/dev/null 2>&1 || true
   kubectl config delete-context "k3d-$CLUSTER" 2>/dev/null || true
   kubectl config delete-cluster "k3d-$CLUSTER" 2>/dev/null || true
   kubectl config delete-user "admin@k3d-$CLUSTER" 2>/dev/null || true
