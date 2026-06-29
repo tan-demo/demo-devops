@@ -1,6 +1,6 @@
 replicaCount: 3
 
-terminationGracePeriodSeconds: 20
+terminationGracePeriodSeconds: 30
 lifecycle:
   preStopSleepSeconds: 5
 
