@@ -15,7 +15,7 @@ and the reason.
 | `docker:20.10-dind` (privileged DinD) | `docker/setup-buildx-action` (Buildx) | No privileged Docker-in-Docker. |
 | `deploy_prod`: manual `kubectl set image ...:latest` with `KUBECONFIG_CONTENT` | **Removed from CI**; deploy is GitOps via ArgoCD | CI builds + pushes an immutable image; ArgoCD syncs it. No cluster credentials in CI; no imperative drift. |
 | `only: master` | `on: push (main)` + `pull_request` | PRs get scanned/built; pushes to main publish. |
-| Every commit runs build + push | **Path filter:** CI triggers only when `app/quote-api/**` (or the workflow itself) changes | Docs, Helm, IaC, and script edits do not rebuild or republish the container image. Deploy stays GitOps-side (ArgoCD syncs the chart from git; CI never runs `kubectl`). |
+| Every commit runs build + push | **Split path filter:** workflow runs on app/chart/IaC/ArgoCD changes; **Semgrep** on app or static paths; **build/push/Trivy/cosign** only when `app/quote-api/**` changes | Docs/scripts edits do not rebuild the image; chart/IaC edits still get SAST. Deploy stays GitOps-side (ArgoCD syncs the chart; CI never runs `kubectl`). |
 
 **Improvements added (bonus):** Trivy scan gating on HIGH/CRITICAL (`ignore-unfixed`), and cosign
 **keyless** signing of the pushed digest (OIDC, no private key to manage).

@@ -45,7 +45,6 @@ Timeline from that run:
 17:30  cpu: 228%/60%  replicas 6
 17:31  cpu: 354%/60%  replicas 6   (saturated)
 17:32  cpu: 130%/60%  replicas 6   (load out)
-```
 
 At 6 replicas, `kubectl get pods -o wide` showed **3 spot + 3 on-demand** — the Part 2 capacity spread
 still holds after scale-out.
