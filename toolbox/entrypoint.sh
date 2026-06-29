@@ -31,6 +31,14 @@ kubectl wait --for=condition=Ready nodes --all --timeout=120s
 log "running troubleshoot/prepare.sh (labels + taints, idempotent)..."
 sh /workspace/troubleshoot/prepare.sh
 
+log "making the Traefik ingress HA (2 replicas, spread) so a spot reclaim can't drop it..."
+kubectl apply -f /workspace/toolbox/traefik-ha.yaml
+for _ in $(seq 1 40); do
+  [ "$(kubectl -n kube-system get deploy traefik -o jsonpath='{.spec.replicas}' 2>/dev/null)" = "2" ] && break
+  sleep 3
+done
+kubectl -n kube-system rollout status deploy/traefik --timeout=120s || true
+
 log "DONE — cluster ready. Toolbox staying up."
 kubectl get nodes -L acme.io/capacity -L acme.io/node-type || true
 touch /kubeconfig/bootstrap.done
