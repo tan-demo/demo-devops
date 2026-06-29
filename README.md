@@ -26,36 +26,9 @@ remaining steps. Scripts are idempotent and bind-mounted into the toolbox.
 
 ## Architecture
 
-```mermaid
-flowchart TB
-    subgraph host["Reviewer host (Docker)"]
-        compose["docker compose up -d"]
-        curl["curl localhost:8080/api/quote"]
-    end
+![local architecture](docs/local-architecture.svg)
 
-    subgraph net["docker network: k3dnet"]
-        toolbox["toolbox container<br/>kubectl · helm · terraform · k6 · k3d<br/>./scripts bind-mounted"]
-        subgraph cluster["k3d cluster (k3s v1.36)"]
-            server["server-0 (control-plane, Traefik)"]
-            spot["agent-0, agent-1<br/>acme.io/capacity=spot"]
-            od["agent-2<br/>acme.io/capacity=on-demand"]
-            gpu["agent-3<br/>node-type=gpu (tainted)"]
-        end
-    end
-
-    argocd["ArgoCD (app-of-apps)"]
-    app["quote-api<br/>Deployment + HPA(min3) + PDB + Ingress"]
-
-    compose --> toolbox
-    toolbox -->|"k3d create + prepare.sh"| cluster
-    toolbox -->|"10 install"| argocd
-    toolbox -->|"20 apply applications-dev"| argocd
-    argocd -->|"sync Helm chart from Git"| app
-    app -.->|"prefer (weight)"| spot
-    app -.->|">=1 replica"| od
-    app -->|"never (no toleration)"| gpu
-    curl -->|"localhost:8080 -> Traefik Ingress"| app
-```
+> Editable source: [`docs/local-architecture.drawio`](docs/local-architecture.drawio) (open in [draw.io](https://app.diagrams.net/)).
 
 ### Placement policy (Part 2)
 
