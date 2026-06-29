@@ -19,20 +19,19 @@ ARGO_PW=$(docker compose exec -T toolbox sh -c \
   'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" 2>/dev/null | base64 -d' \
   2>/dev/null || true)
 
-# If the host has kubectl, merge the (host-reachable) kubeconfig into ~/.kube/config as its own
-# context — without switching the user's current context. Otherwise the toolbox option below is enough.
 HOST_LINE="install kubectl on your host to use it directly — the toolbox option above needs nothing."
 if command -v kubectl >/dev/null 2>&1; then
   mkdir -p "$HOME/.kube"
   prev_ctx=$(kubectl config current-context 2>/dev/null || true)
   tmp=$(mktemp)
-  docker compose exec -T toolbox cat /kubeconfig/config | sed 's/host.docker.internal/127.0.0.1/g' > "$tmp"
+  # k3d kubeconfig get returns a host-reachable server; the in-cluster /kubeconfig/config points at
+  # k3d-dev-serverlb, which only resolves inside the docker network.
+  docker compose exec -T toolbox k3d kubeconfig get dev 2>/dev/null \
+    | sed -e 's#https://0\.0\.0\.0:#https://127.0.0.1:#' -e 's#https://host\.docker\.internal:#https://127.0.0.1:#' > "$tmp"
   KUBECONFIG="$HOME/.kube/config:$tmp" kubectl config view --flatten > "$HOME/.kube/config.tmp.$$"
   mv "$HOME/.kube/config.tmp.$$" "$HOME/.kube/config"
   rm -f "$tmp"
-  # Make k3d-dev the current context (like k3d/kind do) so a bare `kubectl ...` targets this
-  # cluster. k3d-dev carries its own CA data, so it never touches the host trust store — avoids
-  # the "x509: invalid RDNSequence" error a corporate keychain can trigger on other contexts.
+  # k3d-dev as current context (its embedded CA avoids the macOS-keychain x509 error on other contexts).
   kubectl config use-context "$CTX" >/dev/null 2>&1 || true
   HOST_LINE="merged into ~/.kube/config and set current (was: ${prev_ctx:-none} — \`kubectl config use-context ${prev_ctx:-…}\` to switch back):
        kubectl get nodes"

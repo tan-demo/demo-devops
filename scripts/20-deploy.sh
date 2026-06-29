@@ -33,8 +33,7 @@ until kubectl get application quote-api-dev -n "$NS" >/dev/null 2>&1; do
   sleep 3
 done
 
-# Nudge ArgoCD to reconcile now instead of waiting for the (3m default) interval,
-# so the child app syncs promptly on a fresh cluster.
+# Nudge ArgoCD to reconcile now instead of waiting for the default interval.
 kubectl annotate application quote-api-dev -n "$NS" \
   argocd.argoproj.io/refresh=normal --overwrite >/dev/null 2>&1 || true
 

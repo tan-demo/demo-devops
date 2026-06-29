@@ -26,7 +26,7 @@ if [ -z "${TOOLBOX:-}" ]; then
   echo ">> not in toolbox — running all steps inside the toolbox container"
   wait_for_bootstrap
   rc=0
-  docker compose exec -T toolbox /workspace/scripts/run-all.sh || rc=$?
+  docker compose exec -T -e SKIP_STEPS="${SKIP_STEPS-60}" toolbox /workspace/scripts/run-all.sh || rc=$?
   echo ""
   echo ">> setting up local access (host kubeconfig + ArgoCD login)..."
   sh "$(dirname "$0")/access.sh" || true
@@ -36,7 +36,7 @@ fi
 cd /workspace
 
 # 60 (load test) is opt-in — heavy. SKIP_STEPS="" runs everything.
-SKIP_STEPS="${SKIP_STEPS:-60}"
+SKIP_STEPS="${SKIP_STEPS-60}"
 
 for step in scripts/[0-9][0-9]-*.sh; do
   [ -e "$step" ] || continue
