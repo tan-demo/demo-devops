@@ -20,6 +20,9 @@ wait_for_bootstrap() {
 }
 
 if [ -z "${TOOLBOX:-}" ]; then
+  . "$(dirname "$0")/_preflight.sh"
+  preflight_host || exit $?
+  require_toolbox_running || exit $?
   echo ">> not in toolbox — running all steps inside the toolbox container"
   wait_for_bootstrap
   rc=0

@@ -12,6 +12,12 @@ simulates a mixed **spot / on-demand / GPU** nodepool environment.
 
 ## Quick start (the Golden Rule)
 
+**Only prerequisite on the host: Docker with the Compose v2 plugin** (Docker Desktop ships both).
+Everything else — kubectl, helm, terraform, k6, k3d, argocd — lives inside the toolbox image. The host
+scripts run a **preflight** (`scripts/_preflight.sh`) and fail fast with install instructions if Docker
+is missing, the daemon is down, or the toolbox isn't up yet — so a missing dependency never surfaces as
+a cryptic mid-run error.
+
 ```bash
 git clone https://github.com/tan-demo/demo-devops && cd demo-devops
 docker compose up -d          # k3d cluster (4 workers) + toolbox + node labels/taints

@@ -10,6 +10,10 @@ if [ -n "${TOOLBOX:-}" ]; then
   exit 0
 fi
 
+. "$(dirname "$0")/_preflight.sh"
+preflight_host || exit $?
+require_toolbox_running || exit $?
+
 cd "$(dirname "$0")/.."
 
 KUBECONFIG_OUT="${KUBECONFIG_OUT:-$HOME/.kube/k3d-devops.yaml}"
