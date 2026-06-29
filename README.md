@@ -59,17 +59,6 @@ docker compose exec toolbox /workspace/scripts/60-loadtest.sh
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  compose["docker compose"] --> toolbox[toolbox]
-  toolbox --> k3d["k3d cluster\n1 server + 4 agents"]
-  k3d --> pools["nodepools\n2 spot · 1 on-demand · 1 GPU"]
-  toolbox --> argocd[ArgoCD]
-  argocd --> chart["Helm chart\nquote-api"]
-  chart --> app[quote-api pods]
-  app --> ingress["Ingress\nlocalhost:8080"]
-```
-
 ![local architecture](docs/local-architecture.svg)
 
 > Editable source: [`docs/local-architecture.drawio`](docs/local-architecture.drawio) (open in [draw.io](https://app.diagrams.net/)).
@@ -150,15 +139,20 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
   docker compose exec toolbox kubectl get nodes
   ```
 - **kubectl — from your host** (if you have `kubectl`): `access.sh` merges a host-reachable config into
-  `~/.kube/config` as context **`k3d-dev`** (it does *not* switch your current context):
+  `~/.kube/config` and makes **`k3d-dev`** the current context (like k3d/kind do), so a bare command works:
   ```bash
-  kubectl --context k3d-dev get nodes
+  kubectl get nodes      # kubectl config use-context <previous> to switch back
   ```
-- **ArgoCD UI** (host kubectl):
+- **ArgoCD UI:**
   ```bash
-  kubectl --context k3d-dev port-forward -n argocd svc/argocd-server 8081:443
+  kubectl port-forward -n argocd svc/argocd-server 8081:443
   # browse https://localhost:8081 (accept the self-signed cert), login: admin / <printed password>
   ```
+
+> **Host kubectl shows `x509: invalid RDNSequence` / `unable to load root certificates`?** That's a
+> recent-kubectl + macOS-keychain issue (a malformed corporate/MDM cert in your system trust store),
+> independent of this repo — the `k3d-dev` context carries its own CA so it isn't affected, but other
+> contexts are. Easiest path: just use the toolbox — `docker compose exec toolbox kubectl ...`.
 
 `./scripts/destroy.sh` reverses all of it — deletes the cluster, `docker compose down`, removes the
 `k3d-dev` context from `~/.kube/config`, and the app image it built (`FULL=1` also drops the toolbox image).

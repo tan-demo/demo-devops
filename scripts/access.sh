@@ -30,9 +30,12 @@ if command -v kubectl >/dev/null 2>&1; then
   KUBECONFIG="$HOME/.kube/config:$tmp" kubectl config view --flatten > "$HOME/.kube/config.tmp.$$"
   mv "$HOME/.kube/config.tmp.$$" "$HOME/.kube/config"
   rm -f "$tmp"
-  [ -n "$prev_ctx" ] && kubectl config use-context "$prev_ctx" >/dev/null 2>&1 || true
-  HOST_LINE="merged into ~/.kube/config as context '$CTX' (your current context is left as-is):
-       kubectl --context $CTX get nodes"
+  # Make k3d-dev the current context (like k3d/kind do) so a bare `kubectl ...` targets this
+  # cluster. k3d-dev carries its own CA data, so it never touches the host trust store — avoids
+  # the "x509: invalid RDNSequence" error a corporate keychain can trigger on other contexts.
+  kubectl config use-context "$CTX" >/dev/null 2>&1 || true
+  HOST_LINE="merged into ~/.kube/config and set current (was: ${prev_ctx:-none} — \`kubectl config use-context ${prev_ctx:-…}\` to switch back):
+       kubectl get nodes"
 fi
 
 cat <<EOF
