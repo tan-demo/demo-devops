@@ -5,10 +5,16 @@ on:
     branches: [main]
     paths:
       - "app/quote-api/**"
+      - "charts/**"
+      - "iac/**"
+      - "argocd/**"
       - ".github/workflows/ci.yml"
   pull_request:
     paths:
       - "app/quote-api/**"
+      - "charts/**"
+      - "iac/**"
+      - "argocd/**"
       - ".github/workflows/ci.yml"
   workflow_dispatch:
 
@@ -21,8 +27,36 @@ env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/quote-api
 
 jobs:
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.manual.outputs.app || steps.filter.outputs.app }}
+      static: ${{ steps.manual.outputs.static || steps.filter.outputs.static }}
+    steps:
+      - uses: actions/checkout@v5
+      - if: github.event_name == 'workflow_dispatch'
+        id: manual
+        run: |
+          echo "app=true" >> "$GITHUB_OUTPUT"
+          echo "static=true" >> "$GITHUB_OUTPUT"
+      - if: github.event_name != 'workflow_dispatch'
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            app:
+              - 'app/quote-api/**'
+            static:
+              - 'charts/**'
+              - 'iac/**'
+              - 'argocd/**'
+              - '.github/workflows/ci.yml'
+
   test:
     name: Unit tests (pytest)
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -36,6 +70,8 @@ jobs:
 
   sast:
     name: SAST (Semgrep, hard-fail)
+    needs: changes
+    if: needs.changes.outputs.app == 'true' || needs.changes.outputs.static == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -53,7 +89,12 @@ jobs:
 
   build:
     name: Build, scan, push
-    needs: [test, sast]
+    needs: [changes, test, sast]
+    if: |
+      always() &&
+      needs.changes.outputs.app == 'true' &&
+      needs.sast.result == 'success' &&
+      needs.test.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

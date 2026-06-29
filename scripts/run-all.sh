@@ -52,4 +52,5 @@ done
 
 echo ""
 echo ">> core steps complete (including the 25 reclaim drill)."
-echo ">> load test (Part 6, opt-in — heavy): docker compose exec toolbox /workspace/scripts/60-loadtest.sh"
+echo ">> Part 6 (load test — not in default run-all): docker compose exec toolbox /workspace/scripts/60-loadtest.sh"
+echo ">> or run everything: SKIP_STEPS= ./scripts/run-all.sh"

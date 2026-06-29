@@ -49,16 +49,19 @@ idempotent and bind-mounted into the toolbox. The toolbox image **auto-detects**
 works on Intel and Apple Silicon with no env var.
 
 ```bash
-# Part 6 (load test + Prometheus/Grafana) is opt-in — it installs the full kube-prometheus-stack:
+# Part 6 deliverable (Prometheus/Grafana + k6 + HPA proof) — skipped by default in run-all (heavy):
 docker compose exec toolbox /workspace/scripts/60-loadtest.sh
+# Or include it in run-all: SKIP_STEPS= ./scripts/run-all.sh
 
 # Tear everything down (deletes the k3d cluster, then the toolbox + network):
 ./scripts/destroy.sh
 ```
 
-> **GitOps note:** ArgoCD syncs the **published `main`** of this repo, not your local working copy.
-> Local chart edits only reach the cluster after a push — or apply them directly for a quick test
-> with `helm template charts/quote-api | kubectl apply -f -`.
+> **GitOps / forks:** ArgoCD syncs the **published `main` of `github.com/tan-demo/demo-devops`**, not your
+> local working tree or a fork unless you change `repoURL` in `argocd/applications/dev/quote-api-dev.yaml`.
+> After editing the Helm chart locally, **push to `main`** (or your fork URL in the Application) for ArgoCD
+> to pick it up — or smoke-test without ArgoCD:
+> `helm template charts/quote-api -f charts/quote-api/values/dev.yaml | kubectl apply -n quote-api -f -`.
 
 ---
 
@@ -200,9 +203,9 @@ The cluster and toolbox run inside Docker, so the in-cluster kubeconfig points a
   If pods stay `Pending`, raise Docker Desktop's memory, or skip `scripts/60` (the heavy step).
 - **Architecture.** The toolbox image **auto-detects** the build arch (`uname -m` → `amd64`/`arm64`),
   so `docker compose up -d` just works on both Apple Silicon and Intel/CI — no env var to set.
-- **Part 6 is opt-in.** `run-all.sh` runs the core steps **plus the 25 reclaim drill** by default, but
-  skips `60-loadtest.sh` because it installs the full kube-prometheus-stack + runs k6 (heavy on a fresh
-  machine). Run it explicitly, or `SKIP_STEPS="" ./scripts/run-all.sh` to run everything.
+- **Part 6 is opt-in in `run-all`.** Default `run-all` skips `60-loadtest.sh` (kube-prometheus-stack + k6
+  is heavy). For the Part 6 checklist: `docker compose exec toolbox /workspace/scripts/60-loadtest.sh`,
+  or `SKIP_STEPS= ./scripts/run-all.sh` to run everything.
 
 ---
 

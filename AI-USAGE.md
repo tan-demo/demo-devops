@@ -89,8 +89,11 @@ pytest in CI (replacing the legacy flaky npm gate in spirit), Mermaid diagram in
 API that effectively never 5xxs; SHA tags everywhere locally (offline `dev` + `k3d import` is intentional);
 speculative `/tmp` emptyDir when `readOnlyRootFilesystem` already works.
 
-**Neither reviewer caught — I did:** the AWS production diagram drew **RDS** on a stateless in-memory app.
-Removed it; a diagram is a claim — an inaccurate box is worse than a missing one.
+**Neither reviewer caught — I did (diagram accuracy, twice):** an early AWS diagram put **RDS** on the
+stateless in-memory `quote-api` — nothing in the app reads a database, so I removed it (*a diagram is a
+claim; an inaccurate box is worse than a missing one*). Later the bonus diagram was reframed around the
+**Part 5a GPU inference platform** (inference metadata in RDS, GPU NodePool, ESO, Cloudflare) — RDS returned
+there because it matches that workload, not because quote-api suddenly became stateful.
 
 ---
 
@@ -102,7 +105,7 @@ Removed it; a diagram is a claim — an inaccurate box is worse than a missing o
 | `scripts/25-reclaim-drill.sh` | Placement reschedule under spot drain |
 | `troubleshoot/verify.sh` | Part 3 fixes without cheating NetworkPolicy/nodes |
 | `scripts/60-loadtest.sh` | k6 thresholds, HPA > 3, placement at scale |
-| CI: Semgrep + pytest + Trivy + cosign | SAST, regressions, CVEs, signed image — **only when `app/quote-api` changes** (path filter) |
+| CI: Semgrep + pytest + Trivy + cosign | Semgrep on app **or** chart/IaC/ArgoCD changes; build/push **only** when `app/quote-api` changes |
 | `scripts/50-validate-tf.sh` | Karpenter dry-run + Cloudflare `terraform validate` |
 | Grafana under load | Scrapes and dashboards actually work |
 
