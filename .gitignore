@@ -51,6 +51,8 @@ build/
 k6/*.json
 k6/results/
 summary.json
+loadtest/evidence/hpa-scale-out.log
+loadtest/evidence/pod-events.log
 
 # --- OS / editor ---
 .DS_Store

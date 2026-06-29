@@ -30,19 +30,25 @@ imports the Grafana dashboard, runs k6 **through the Ingress**, and prints HPA b
 
 ## HPA scale-out proof
 
-A 15s HPA poll during the run shows the timeline: at load start CPU jumps `4% → 88% → 354%` of target,
-the HPA scales **3 → 5 → 6 within ~30s**, holds 6 for the duration, then keeps 6 through the 5-minute
-scale-down stabilization as CPU falls. `kubectl get pods -o wide` at 6 replicas shows **3 spot + 3
-on-demand** — the Part 2 capacity spread still holds after scale-out, so new replicas don't all pile onto
-spot.
+`scripts/60-loadtest.sh` runs `kubectl get hpa -w` and `kubectl get events --watch-only` in the
+background during the k6 run. Fresh logs land in:
 
-```
+- `loadtest/evidence/hpa-scale-out.log`
+- `loadtest/evidence/pod-events.log`
+
+A representative capture from a prior run is committed as
+`loadtest/evidence/hpa-scale-out.sample.txt` (3 → 6 replicas under load).
+
+Timeline from that run:
 17:29  cpu: 3%/60%    replicas 3   (baseline)
 17:30  cpu: 88%/60%   replicas 3→5 (load in)
 17:30  cpu: 228%/60%  replicas 6
 17:31  cpu: 354%/60%  replicas 6   (saturated)
 17:32  cpu: 130%/60%  replicas 6   (load out)
 ```
+
+At 6 replicas, `kubectl get pods -o wide` showed **3 spot + 3 on-demand** — the Part 2 capacity spread
+still holds after scale-out.
 
 ## Where the bottleneck is
 

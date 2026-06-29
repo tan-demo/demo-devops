@@ -19,6 +19,12 @@ services:
       - kubeconfig:/kubeconfig
     networks:
       - k3dnet
+    healthcheck:
+      test: ["CMD", "test", "-f", "/kubeconfig/bootstrap.done"]
+      interval: 10s
+      timeout: 5s
+      retries: 36
+      start_period: 120s
 
 volumes:
   kubeconfig:

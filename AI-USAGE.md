@@ -1,122 +1,109 @@
 # AI Usage Disclosure
 
-## Tools
+Heavy AI usage throughout — the brief expects it. What I optimized for is **verify, correct, and own**
+the output: every deliverable was run locally (cluster up, `verify.sh`, reclaim drill, load test, CI gates)
+before it stayed in the repo.
 
-- **Claude Code (Claude Opus 4.8)** — used throughout: scaffolding the compose/k3d harness, writing
-  the FastAPI service and Helm chart, the ArgoCD manifests, the Karpenter/Cloudflare IaC, the CI
-  workflow, and the docs. Every artifact was run and verified locally before being kept (cluster up,
-  `helm template`, `terraform validate`, `verify.sh`, **Semgrep** SAST + **Trivy** image CVE scan).
-- I checked tool versions against official release pages while pinning the toolbox image, instead of
-  trusting whatever version an AI model suggested from memory.
-- **OpenAI Codex** and **Cursor** — used after the first complete pass as reviewers against the
-  assignment brief. I used their feedback to look for gaps in the Golden Rule path, placement policy,
-  scripts, and docs; each suggestion was either verified and applied, or rejected with a reason in the
-  review loop below.
+---
 
-## Using AI to *review* my own work — and triaging the reviewers
+## Tools and where they were used
 
-Once the submission was "done", I ran it past two other models specifically to attack it. This was
-deliberately a different mode from authoring: the value of a reviewer is in what it catches, and the
-value of *me* is in deciding which catches are real.
+| Tool | Role | Parts |
+|------|------|-------|
+| **Claude Code (Opus 4.8)** | Primary author — scaffolding, code, manifests, docs | CORE 1–3, harness, Helm/ArgoCD, Parts 4–6 IaC/CI/load test, README |
+| **Cursor** | Second-pass reviewer against the assignment brief | Golden Rule gaps, Part 6 evidence, doc polish → PR #16 |
+| **OpenAI Codex** | Independent reviewer (same brief, different lens) | Portability (multi-arch toolbox), reclaim drill rigour, placement edge cases |
 
-**Codex surfaced five real defects on the strict Golden Rule path — all fixed:**
-- `toolbox/Dockerfile` hard-defaulted `TARGETARCH=arm64`, so an Intel reviewer running the Golden
-  Rule could pull arm64 binaries and fail. Fixed by **auto-detecting the arch** (`uname -m`) at build
-  time and dropping the build arg entirely — verified by building + running the image (every tool
-  reports the host arch).
-- `run-all.sh` skipped the Part 2 **reclaim drill** by default, so the headline resilience proof
-  didn't run on a plain `run-all`. Now the drill runs by default; only the heavy Part 6 load test
-  (full kube-prometheus-stack) stays opt-in.
-- Placement only hard-spread by capacity, not "across nodes". Added a **soft `hostname` spread**
-  (`ScheduleAnyway`) layered on top — node distribution without re-introducing the drain wedge.
-- `scripts/60` swallowed k6's exit code (`|| true`), making the SLO thresholds decorative. It now
-  captures the code, prints the HPA/placement evidence, then **exits non-zero** on a breach.
-- A follow-up Codex review caught that `scripts/25` chose the first spot node, not necessarily a spot
-  node that hosted a `quote-api` replica. That could make the reclaim drill pass without evicting the
-  service. The drill now selects a spot node from the live `quote-api` pod placement, fails if none
-  exists, and asserts curl success, no Pending pods, on-demand retention, and no GPU/control-plane
-  placement after the drain.
+Version pins (kubectl/k3s 1.36, Helm 4, Karpenter `v1`, ArgoCD 3.4, etc.) were checked on official
+release pages — not taken from model memory.
 
-**Cursor (92/100) gave ten suggestions — I implemented four and deliberately declined five.** The
-declines matter as much as the accepts, because "knowing what to skip" is the skill the brief calls
-out:
-- *Implemented:* the **broken→fix** troubleshooting flow (apply the broken manifest, show the failure,
-  then fix — matching the brief's "incident handoff" framing; the broken file existed but was unused);
-  an explicit **Part 6 pointer + teardown** under the Golden Rule; a **CI status badge**; and a
-  **GitOps note** that ArgoCD syncs published `main`, not the local working copy.
-- *Declined, with reasons:* OpenTelemetry tracing (the review itself labelled it a "bonus" — pure
-  gold-plating); a second Mermaid diagram (the draw.io SVG supersedes it — redundant clutter); an
-  error-rate alert (a stateless quote API effectively never 5xxs, so the rule would never fire —
-  decorative); SHA-everywhere image tags (the offline `dev` tag + `k3d image import` is an
-  intentional choice for the no-registry demo path); and a `/tmp` tmpfs (the app is verified running
-  with `readOnlyRootFilesystem` — adding it "just in case" is speculative).
-
-**The catch neither reviewer made — a stale question did.** A simple "*why does the AWS diagram have
-RDS?*" exposed that the production diagram drew a database onto a **stateless** app (it returns a
-random in-memory quote — no persistence). I removed RDS and its data edge. The lesson reinforced: a
-diagram is a claim about the system, and an inaccurate claim is worse than a missing one — so the
-diagram should show only what the workload actually uses (kept GPU pods and ESO, which the brief
-grounds; dropped the DB, which nothing did).
+---
 
 ## Representative prompts that moved things forward
 
-1. *"Set up `docker compose up` so it self-bootstraps a k3d cluster with 4 workers + a toolbox
-   container (kubectl/helm/terraform/k6), runs `prepare.sh`, and the toolbox reaches the API over a
-   shared docker network."* → produced the `toolbox/` image + `entrypoint.sh` + `k3dnet` design.
-2. *"Implement Part 2 placement: prefer spot, always ≥1 on-demand, spread across nodes but soft enough
-   to survive a spot drain — with node affinity weights + topology spread."*
-3. *"Migrate the legacy GitLab pipeline by intent: hard-fail Semgrep gate, git-SHA image tags, drop the
-   hard-coded AWS keys and the manual kubectl deploy."*
+1. *"Self-contained `docker compose up`: toolbox with kubectl/helm/terraform/k6, k3d with 4 worker
+   nodes, run `prepare.sh`, reach the API over a shared Docker network — reviewer runs nothing else."*
+   → `toolbox/` + `k3dnet` + bind-mounted `scripts/` harness.
 
-## Where the AI was wrong / suboptimal, and how I caught it
+2. *"Part 2 placement: prefer spot, always ≥1 on-demand, spread across nodes but reschedule-safe when
+   a spot node is drained — node affinity weights + topology spread, no hard-pin to on-demand."*
+   → Helm chart placement policy; validated only after `scripts/25-reclaim-drill.sh` passed (see below).
 
-**Placement: two wrong turns, both caught by running the actual reclaim drill — not by reading the
-manifest.** Iteration 1 used a `topologySpreadConstraints` with `whenUnsatisfiable: ScheduleAnyway`
-(soft) plus a strong spot affinity weight, assuming soft spread would naturally land one replica on the
-on-demand node. Real placement showed **all 3 on spot, 0 on-demand** — the soft constraint was outscored
-and ignored. Iteration 2 switched to a **hostname-keyed `DoNotSchedule` spread**, which *did* give a
-clean 2 spot + 1 on-demand, and both the model and I assumed it was reschedule-safe. Running
-`scripts/25-reclaim-drill.sh` proved that assumption **wrong**: draining a spot node left a replica
-**`Pending`** and the rollout never returned to 3/3 until uncordon. Root cause: a cordoned node stays in
-the hostname topology domain at 0 pods, so placing the evicted replica anywhere else pushes the skew to
-2 (> maxSkew 1) and the hard constraint rejects it — exactly the trap the brief hints at ("think through
-what a hard constraint would do during the drill"). Fix: key the **`DoNotSchedule` spread on
-`acme.io/capacity` instead of hostname**. That still hard-guarantees ≥1 on-demand and ≥1 spot (skew can
-never reach 3-0), but it *is* reschedule-safe — when one spot node is cordoned the `spot` capacity domain
-still has its other node, so the evicted pod reschedules there. Re-ran the drill: **2 spot + 1 on-demand,
-zero `Pending`, rollout back to 3/3, `curl` loop ok=40/fail=0, and the PDB correctly held ≥2 available
-mid-drain.** (A strict 2:1 ratio is biased via a max-weight spot preference but is best-effort — the
-scheduler's balanced-allocation scoring means it can't be hard-pinned without re-introducing the drain
-trap; the hard guarantee we keep is "≥1 on-demand, always reschedulable".) On top of the hard *capacity*
-spread the final chart **also layers a *soft* `kubernetes.io/hostname` spread (`ScheduleAnyway`)**: the
-thing iteration 1 got wrong was using a soft spread *as the only control* (it was outscored → all on spot);
-used *additively* under the hard capacity guarantee it is safe and gives the per-node distribution the brief
-asks for ("replicas spread across nodes") without re-introducing the drain wedge.
+3. *"Migrate the legacy GitLab pipeline by intent: hard-fail SAST, immutable git-SHA image tags, no AWS
+   keys, no imperative kubectl deploy — GitOps owns rollout."*
+   → Semgrep `--error`, Trivy HIGH/CRITICAL gate, cosign, GHCR push; deploy removed from CI.
 
-**Outdated dependency shipped HIGH CVEs (caught by the security gate, not by reading code).** The
-model pinned `fastapi==0.115.6` — its training-era "latest". Running the image through **Trivy** (the
-CI's HIGH/CRITICAL gate) flagged **3 HIGH CVEs** in the transitive `starlette 0.41.3` (DoS via Range
-header merging; SSRF/NTLM credential theft via UNC paths) — which would have **failed the pipeline**. I
-checked PyPI for current releases and bumped to `fastapi 0.138.1` (pulls patched `starlette 1.3.1`),
-`uvicorn 0.49.0`, `prometheus-client 0.25.0`, then rebuilt and re-verified: Trivy **0 HIGH/CRITICAL**,
-Semgrep **0 findings**, and a runtime smoke test (all four endpoints + the readiness flag) still green.
-While there I also migrated the **deprecated** `@app.on_event("startup")` hook to FastAPI's current
-`lifespan` handler — another stale-API default the model reached for from memory.
+---
 
-**Observability *looked* done but wasn't — the dashboard had "No data" panels.** The chart shipped a
-ServiceMonitor + a Grafana dashboard and `scripts/60` installed kube-prometheus-stack, so on paper Part 6
-was complete. Only when I actually opened Grafana under load did two of the four panels (request rate, p95
-latency) show **No data**. `kubectl` traced it: the ServiceMonitor selected on `app.kubernetes.io/instance`
-too, but `scripts/60` rendered it with `helm template qa …` (instance `qa`) while the app is deployed by
-ArgoCD with instance `quote-api-dev` — so the selector matched **no** Service and Prometheus scraped
-nothing (`quote_requests_total` was empty). Fixed by selecting on the **stable** `app.kubernetes.io/name`
-only; re-verified that the counter + latency histogram now appear in Prometheus and all four panels
-populate. The lesson the brief is testing: *"the manifests exist and `helm lint`s"* is not *"it works"* —
-the dashboard had to be looked at.
+## Where the AI was wrong or suboptimal — and how I caught it
 
-**Two smaller corrections:**
-- The model first pinned tool versions from memory (kubectl 1.31, etc.). I checked the release pages and
-  found the current stable set (kubectl/k3s 1.36, Helm 4, k6 v2); I also had to **override the k3d
-  default k3s image** so the server version matched the client and avoided a version-skew warning.
-- The ArgoCD install initially failed (`applicationsets` CRD annotation too large for client-side
-  apply). The fix was `kubectl apply --server-side`.
+### 1. Placement policy — wrong twice; caught by running the reclaim drill, not by reading YAML
+
+**Symptom (iteration 1):** All 3 replicas on spot, 0 on on-demand — soft `topologySpreadConstraints`
+(`ScheduleAnyway`) plus spot preference was outscored by the scheduler and ignored.
+
+**Symptom (iteration 2):** Hard spread keyed on `kubernetes.io/hostname` gave a clean 2 spot + 1
+on-demand — but draining a spot node left a replica **`Pending`** until uncordon. Root cause: a cordoned
+node stays in its hostname domain at 0 pods, so the evicted pod violates `maxSkew: 1`.
+
+**Fix:** Hard `DoNotSchedule` spread on **`acme.io/capacity`** (guarantees ≥1 on-demand and ≥1 spot;
+reschedule-safe because the other spot node remains in the `spot` domain). Layer a **soft** hostname
+spread on top for per-node distribution without re-introducing the drain wedge.
+
+**Verify:** `scripts/25-reclaim-drill.sh` — curl loop ok/fail=0, no Pending pods, ≥1 on-demand retained.
+This is exactly the trap the brief hints at ("think through what a hard constraint would do during the drill").
+
+### 2. Stale dependencies — caught by Trivy, not by code review
+
+The model pinned `fastapi==0.115.6` (training-era "latest"). **Trivy** flagged 3 **HIGH** CVEs in
+transitive `starlette`. Bumped to current releases; pipeline green (Trivy 0 HIGH/CRITICAL, Semgrep clean).
+Also replaced deprecated `@app.on_event("startup")` with FastAPI `lifespan` — another stale default.
+
+### 3. Observability that looked done but wasn't — caught by opening Grafana under load
+
+ServiceMonitor selected on `app.kubernetes.io/instance`, but Part 6 applied it with instance `qa` while
+ArgoCD deploys `quote-api-dev` — Prometheus scraped nothing; two dashboard panels showed **No data**.
+Fixed selector to stable `app.kubernetes.io/name` only; re-checked all four panels under k6 load.
+
+### 4. Golden Rule bootstrap race — caught by reviewing against the brief literally (Cursor pass)
+
+The brief says the reviewer runs `docker compose up -d` then immediately `./scripts/run-all.sh`. Our
+entrypoint creates k3d in the background for several minutes; `run-all` could exec into the toolbox before
+the cluster existed. **Fix (this PR):** `bootstrap.done` marker + compose healthcheck + host-side poll in
+`run-all.sh` (up to 10 min). Verified: fresh clone → compose → run-all → `curl localhost:8080/api/quote`
+without reading docs.
+
+---
+
+## Using AI to review my own work
+
+After the first complete pass I ran **Codex** and **Cursor** against the checklist — deliberately
+attacking, not authoring. I triaged every suggestion: apply if grounded in the brief, reject if
+gold-plating.
+
+**Applied from reviews:** multi-arch toolbox auto-detect, reclaim drill on a node that actually hosts
+`quote-api`, broken→fix troubleshoot flow, k6 hard-fail on threshold breach, HPA `-w` capture in Part 6,
+pytest in CI (replacing the legacy flaky npm gate in spirit), Mermaid diagram in README.
+
+**Declined (with reasons):** OpenTelemetry tracing (bonus only); error-rate alert on a stateless quote
+API that effectively never 5xxs; SHA tags everywhere locally (offline `dev` + `k3d import` is intentional);
+speculative `/tmp` emptyDir when `readOnlyRootFilesystem` already works.
+
+**Neither reviewer caught — I did:** the AWS production diagram drew **RDS** on a stateless in-memory app.
+Removed it; a diagram is a claim — an inaccurate box is worse than a missing one.
+
+---
+
+## How I verify before keeping AI output
+
+| Gate | What it catches |
+|------|-----------------|
+| `./scripts/run-all.sh` + host `curl` | Golden Rule end-to-end |
+| `scripts/25-reclaim-drill.sh` | Placement reschedule under spot drain |
+| `troubleshoot/verify.sh` | Part 3 fixes without cheating NetworkPolicy/nodes |
+| `scripts/60-loadtest.sh` | k6 thresholds, HPA > 3, placement at scale |
+| CI: Semgrep + pytest + Trivy + cosign | SAST, regressions, CVEs, signed image — **only when `app/quote-api` changes** (path filter) |
+| `scripts/50-validate-tf.sh` | Karpenter dry-run + Cloudflare `terraform validate` |
+| Grafana under load | Scrapes and dashboards actually work |
+
+The pattern: **AI drafts fast; running the thing decides what stays.**
