@@ -42,11 +42,15 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
   the reclaim drill, the `spot` domain still has its other node, so the evicted pod reschedules with **no
   `Pending`** (a hostname-keyed hard spread does *not* survive this — the cordoned node stays in its own
   domain and wedges the pod; see `AI-USAGE.md` for how the drill caught that).
+- **A second, *soft* spread keyed on `kubernetes.io/hostname` (`ScheduleAnyway`, maxSkew 1)** gives the
+  scheduler a best-effort signal to put replicas on *different nodes* (what the brief means by "spread
+  across nodes"). Being soft, it never wedges a reschedule the way a hard hostname spread does — it just
+  loses to the hard capacity guarantee when the two disagree.
 - **Preferred** affinity (max weight) for spot gives the cost bias. A strict 2:1 ratio is best-effort —
   the scheduler's scoring means the spot majority isn't hard-guaranteed; the *guarantee* we keep is
   "≥1 on-demand, always reschedulable", which is what the brief asks for.
-- We deliberately do **not** hard-pin by hostname or by capacity-to-on-demand — both defeat
-  rescheduling during a reclaim. Verified live: `scripts/25` drains a spot node with the `curl` loop at
+- We deliberately do **not** *hard*-pin by hostname or by capacity-to-on-demand — both defeat
+  rescheduling during a reclaim (hence hostname spread is soft, capacity spread is hard). Verified live: `scripts/25` drains a spot node with the `curl` loop at
   **ok=40 / fail=0**, pods reschedule to 3/3, the PDB holds ≥2, and ≥1 on-demand is retained.
 
 ### Bonus — how this runs in production on AWS
@@ -61,7 +65,7 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
 
 | Script | Does | When |
 |--------|------|------|
-| `scripts/run-all.sh` | runs every numbered step in the toolbox, then sets up local access (kubeconfig + ArgoCD) | after `docker compose up -d` |
+| `scripts/run-all.sh` | runs the core steps + the 25 reclaim drill in the toolbox (60 load test opt-in), then sets up local access (kubeconfig + ArgoCD) | after `docker compose up -d` |
 | `scripts/10-install-argocd.sh` | installs the ArgoCD controller (server-side apply) | bootstrap |
 | `scripts/15-build-image.sh` | builds the app image and `k3d image import`s it for offline runs | before deploy |
 | `scripts/20-deploy.sh` | applies the AppProject + `applications-dev` app-of-apps → ArgoCD deploys quote-api | deploy |
@@ -127,8 +131,11 @@ The cluster and toolbox run inside Docker, so the in-cluster kubeconfig points a
   `toolbox/k3d-config.yaml` if it clashes, then `docker compose up -d` again.
 - **Memory.** A 5-node k3d cluster + ArgoCD + kube-prometheus-stack wants ~6–8 GB given to Docker.
   If pods stay `Pending`, raise Docker Desktop's memory, or skip `scripts/60` (the heavy step).
-- **Architecture.** The toolbox image builds for `arm64` by default; on Intel/CI set `TARGETARCH=amd64`
-  (e.g. in `.env`). All tool binaries are multi-arch.
+- **Architecture.** The toolbox image **auto-detects** the build arch (`uname -m` → `amd64`/`arm64`),
+  so `docker compose up -d` just works on both Apple Silicon and Intel/CI — no env var to set.
+- **Part 6 is opt-in.** `run-all.sh` runs the core steps **plus the 25 reclaim drill** by default, but
+  skips `60-loadtest.sh` because it installs the full kube-prometheus-stack + runs k6 (heavy on a fresh
+  machine). Run it explicitly, or `SKIP_STEPS="" ./scripts/run-all.sh` to run everything.
 
 ---
 

@@ -5,8 +5,6 @@ services:
     build:
       context: .
       dockerfile: toolbox/Dockerfile
-      args:
-        TARGETARCH: ${TARGETARCH:-arm64}
     image: demo-devops-toolbox:local
     container_name: devops-toolbox
     restart: unless-stopped

@@ -30,7 +30,8 @@ echo ">> HPA before load:"
 kubectl get hpa -n "$APP_NS"
 
 echo ">> running k6 load test through the Ingress ($BASE_URL)"
-BASE_URL="$BASE_URL" k6 run loadtest/script.js || true
+k6_rc=0
+BASE_URL="$BASE_URL" k6 run loadtest/script.js || k6_rc=$?
 
 echo ">> HPA after load (expect replicas scaled beyond 3):"
 kubectl get hpa -n "$APP_NS"
@@ -38,3 +39,9 @@ echo ">> placement of replicas (new ones still respect spot/on-demand):"
 for n in $(kubectl get pods -n "$APP_NS" -l app.kubernetes.io/name=quote-api -o jsonpath='{.items[*].spec.nodeName}'); do
   kubectl get node "$n" -o jsonpath='{.metadata.labels.acme\.io/capacity}{"\n"}'
 done | sort | uniq -c
+
+if [ "$k6_rc" -ne 0 ]; then
+  echo ">> FAIL: k6 thresholds not met (exit $k6_rc) — load test did not meet its SLOs" >&2
+  exit "$k6_rc"
+fi
+echo ">> k6 thresholds passed."
