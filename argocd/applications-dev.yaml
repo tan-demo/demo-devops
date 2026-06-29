@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: root
+  name: applications-dev
   namespace: argocd
 spec:
   project: quote-api
   source:
     repoURL: https://github.com/tan-demo/demo-devops
     targetRevision: main
-    path: argocd/applications
+    path: argocd/applications/dev
     directory:
       recurse: true
   destination:

@@ -49,7 +49,7 @@ flowchart TB
     compose --> toolbox
     toolbox -->|"k3d create + prepare.sh"| cluster
     toolbox -->|"10 install"| argocd
-    toolbox -->|"20 apply root-app"| argocd
+    toolbox -->|"20 apply applications-dev"| argocd
     argocd -->|"sync Helm chart from Git"| app
     app -.->|"prefer (weight)"| spot
     app -.->|">=1 replica"| od
@@ -109,7 +109,7 @@ flowchart LR
 | `scripts/run-all.sh` | runs every numbered step in the toolbox, then sets up local access (kubeconfig + ArgoCD) | after `docker compose up -d` |
 | `scripts/10-install-argocd.sh` | installs the ArgoCD controller (server-side apply) | bootstrap |
 | `scripts/15-build-image.sh` | builds the app image and `k3d image import`s it for offline runs | before deploy |
-| `scripts/20-deploy.sh` | applies the AppProject + root app-of-apps → ArgoCD deploys quote-api | deploy |
+| `scripts/20-deploy.sh` | applies the AppProject + `applications-dev` app-of-apps → ArgoCD deploys quote-api | deploy |
 | `scripts/25-reclaim-drill.sh` | drains a spot node, shows the service still answers, then uncordons | resilience demo |
 | `scripts/40-troubleshoot.sh` | applies `troubleshoot/fixed-app.yaml` and runs `verify.sh` | Part 3 |
 | `scripts/50-validate-tf.sh` | `terraform fmt -check` / `init -backend=false` / `validate` (Cloudflare) | Part 5 |
