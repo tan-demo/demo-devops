@@ -1,7 +1,7 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
 
-const BASE = __ENV.BASE_URL || "http://k3d-devops-serverlb";
+const BASE = __ENV.BASE_URL || "http://k3d-dev-serverlb";
 
 export const options = {
   stages: [

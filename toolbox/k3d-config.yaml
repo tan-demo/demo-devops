@@ -1,7 +1,7 @@
 apiVersion: k3d.io/v1alpha5
 kind: Simple
 metadata:
-  name: devops
+  name: dev
 image: rancher/k3s:v1.36.2-k3s1
 servers: 1
 agents: 4
@@ -16,6 +16,6 @@ options:
     timeout: "180s"
   k3s:
     extraArgs:
-      - arg: --tls-san=k3d-devops-serverlb
+      - arg: --tls-san=k3d-dev-serverlb
         nodeFilters:
           - server:*

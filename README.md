@@ -144,14 +144,14 @@ The cluster and toolbox run inside Docker, so the in-cluster kubeconfig points a
 - **App** (already exposed): `curl http://localhost:8080/api/quote`
 - **kubectl from the host:**
   ```bash
-  ./scripts/access.sh                       # writes ~/.kube/k3d-devops.yaml
-  export KUBECONFIG=~/.kube/k3d-devops.yaml
+  ./scripts/access.sh                       # writes ~/.kube/k3d-dev.yaml
+  export KUBECONFIG=~/.kube/k3d-dev.yaml
   kubectl get nodes
   ```
   (Or skip the host setup entirely: `docker compose exec toolbox kubectl get pods -A`.)
 - **ArgoCD UI:**
   ```bash
-  export KUBECONFIG=~/.kube/k3d-devops.yaml
+  export KUBECONFIG=~/.kube/k3d-dev.yaml
   kubectl port-forward -n argocd svc/argocd-server 8081:443
   # browse https://localhost:8081 (accept the self-signed cert), login: admin / <printed password>
   ```
@@ -169,7 +169,7 @@ The cluster and toolbox run inside Docker, so the in-cluster kubeconfig points a
 - **Single repo (monorepo).** A production setup would split app / infra / gitops-config repos for
   ownership boundaries and to avoid CI-commit loops; here a monorepo keeps the Golden Rule at one clone.
 - **k3d inside compose via the toolbox.** The toolbox mounts the Docker socket and creates k3d node
-  containers on a shared `k3dnet` network, so it reaches the API at `k3d-devops-serverlb:6443` without
+  containers on a shared `k3dnet` network, so it reaches the API at `k3d-dev-serverlb:6443` without
   host-networking quirks.
 - **Image built + imported locally.** Pods use `imagePullPolicy: IfNotPresent` against the
   k3d-imported image, so the demo runs offline; the same image is published to GHCR by CI, tagged

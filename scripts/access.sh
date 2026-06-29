@@ -13,7 +13,7 @@ require_toolbox_running || exit $?
 
 cd "$(dirname "$0")/.."
 
-KUBECONFIG_OUT="${KUBECONFIG_OUT:-$HOME/.kube/k3d-devops.yaml}"
+KUBECONFIG_OUT="${KUBECONFIG_OUT:-$HOME/.kube/k3d-dev.yaml}"
 mkdir -p "$(dirname "$KUBECONFIG_OUT")"
 
 docker compose exec -T toolbox cat /kubeconfig/config \

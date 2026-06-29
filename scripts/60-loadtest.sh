@@ -4,7 +4,7 @@ cd /workspace
 
 MON_NS=monitoring
 APP_NS=quote-api
-BASE_URL="${BASE_URL:-http://k3d-devops-serverlb}"
+BASE_URL="${BASE_URL:-http://k3d-dev-serverlb}"
 EVIDENCE_DIR=loadtest/evidence
 HPA_LOG="$EVIDENCE_DIR/hpa-scale-out.log"
 EVENTS_LOG="$EVIDENCE_DIR/pod-events.log"
