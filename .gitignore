@@ -21,7 +21,6 @@ cosign.key
 !*.tfvars.example
 .terraform/
 .terraform.lock.hcl
-.terragrunt-cache/
 terraform.tfstate
 terraform.tfstate.*
 crash.log
