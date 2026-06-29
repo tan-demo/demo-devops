@@ -66,14 +66,18 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
   the scheduler's scoring means the spot majority isn't hard-guaranteed; the *guarantee* we keep is
   "≥1 on-demand, always reschedulable", which is what the brief asks for.
 - We deliberately do **not** *hard*-pin by hostname or by capacity-to-on-demand — both defeat
-  rescheduling during a reclaim (hence hostname spread is soft, capacity spread is hard). Verified live: `scripts/25` drains a spot node with the `curl` loop at
-  **ok=40 / fail=0**, pods reschedule to 3/3, the PDB holds ≥2, and ≥1 on-demand is retained.
+  rescheduling during a reclaim (hence hostname spread is soft, capacity spread is hard). `scripts/25`
+  now selects a **spot node that is actually hosting a `quote-api` pod**, drains it, keeps a curl loop
+  running, and fails if there are request failures, Pending pods, loss of on-demand placement, or any pod
+  lands outside the spot/on-demand pool.
 
 ### Bonus — how this runs in production on AWS
 
 ![quote-api in production on AWS](docs/aws-architecture.svg)
 
 > Editable source: [`docs/aws-architecture.drawio`](docs/aws-architecture.drawio) (open in [draw.io](https://app.diagrams.net/)).
+> The service is stateless today, so the diagram does not invent a database dependency; RDS would be added
+> only if quotes/admin metadata become durable application data.
 
 ---
 
@@ -85,7 +89,7 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
 | `scripts/10-install-argocd.sh` | installs the ArgoCD controller (server-side apply) | bootstrap |
 | `scripts/15-build-image.sh` | builds the app image and `k3d image import`s it for offline runs | before deploy |
 | `scripts/20-deploy.sh` | applies the AppProject + `applications-dev` app-of-apps → ArgoCD deploys quote-api | deploy |
-| `scripts/25-reclaim-drill.sh` | drains a spot node, shows the service still answers, then uncordons | resilience demo |
+| `scripts/25-reclaim-drill.sh` | drains a spot node that hosts `quote-api`, asserts the service stays up and placement survives, then uncordons | resilience demo |
 | `scripts/40-troubleshoot.sh` | applies `troubleshoot/fixed-app.yaml` and runs `verify.sh` | Part 3 |
 | `scripts/50-validate-tf.sh` | `terraform fmt -check` / `init -backend=false` / `validate` (Cloudflare) | Part 5 |
 | `scripts/60-loadtest.sh` | installs kube-prometheus-stack, runs k6 through the Ingress, captures HPA scale-out | Part 6 |

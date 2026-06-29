@@ -6,13 +6,12 @@
   the FastAPI service and Helm chart, the ArgoCD manifests, the Karpenter/Cloudflare IaC, the CI
   workflow, and the docs. Every artifact was run and verified locally before being kept (cluster up,
   `helm template`, `terraform validate`, `verify.sh`, **Semgrep** SAST + **Trivy** image CVE scan).
-- Versions for all tooling were **verified against current docs** (Kubernetes/k3d/Helm/Terraform/k6/
-  ArgoCD release pages) rather than taken from the model's memory.
-- **OpenAI Codex** and **Cursor** — used as *independent reviewers* of the finished submission (a
-  second and third pair of eyes), not as authors. Codex scored it 88/100, Cursor 92/100; both
-  returned concrete, actionable critiques. I treated their output the same way I treat any AI output:
-  triage it against the brief, accept what's grounded, reject what's gold-plating. See the review
-  loop below.
+- I checked tool versions against official release pages while pinning the toolbox image, instead of
+  trusting whatever version an AI model suggested from memory.
+- **OpenAI Codex** and **Cursor** — used after the first complete pass as reviewers against the
+  assignment brief. I used their feedback to look for gaps in the Golden Rule path, placement policy,
+  scripts, and docs; each suggestion was either verified and applied, or rejected with a reason in the
+  review loop below.
 
 ## Using AI to *review* my own work — and triaging the reviewers
 
@@ -20,7 +19,7 @@ Once the submission was "done", I ran it past two other models specifically to a
 deliberately a different mode from authoring: the value of a reviewer is in what it catches, and the
 value of *me* is in deciding which catches are real.
 
-**Codex (88/100) surfaced four real defects on the strict Golden Rule path — all fixed:**
+**Codex surfaced five real defects on the strict Golden Rule path — all fixed:**
 - `toolbox/Dockerfile` hard-defaulted `TARGETARCH=arm64`, so an Intel reviewer running the Golden
   Rule could pull arm64 binaries and fail. Fixed by **auto-detecting the arch** (`uname -m`) at build
   time and dropping the build arg entirely — verified by building + running the image (every tool
@@ -32,6 +31,11 @@ value of *me* is in deciding which catches are real.
   (`ScheduleAnyway`) layered on top — node distribution without re-introducing the drain wedge.
 - `scripts/60` swallowed k6's exit code (`|| true`), making the SLO thresholds decorative. It now
   captures the code, prints the HPA/placement evidence, then **exits non-zero** on a breach.
+- A follow-up Codex review caught that `scripts/25` chose the first spot node, not necessarily a spot
+  node that hosted a `quote-api` replica. That could make the reclaim drill pass without evicting the
+  service. The drill now selects a spot node from the live `quote-api` pod placement, fails if none
+  exists, and asserts curl success, no Pending pods, on-demand retention, and no GPU/control-plane
+  placement after the drain.
 
 **Cursor (92/100) gave ten suggestions — I implemented four and deliberately declined five.** The
 declines matter as much as the accepts, because "knowing what to skip" is the skill the brief calls
