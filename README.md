@@ -89,6 +89,12 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
 > Editable source: [`docs/aws-architecture.drawio`](docs/aws-architecture.drawio) (open in [draw.io](https://app.diagrams.net/)).
 > The service is stateless today, so the diagram does not invent a database dependency; RDS would be added
 > only if quotes/admin metadata become durable application data.
+>
+> **Production IaC sketch (optional):** Terragrunt modules for this diagram
+> ([`iac/aws/`](https://github.com/tan-demo/demo-devops/tree/extra/iac-aws-terragrunt/iac/aws) — VPC,
+> EKS, Karpenter controller, ArgoCD bootstrap, Cloudflare; validate-only with mock outputs) live on branch
+> [`extra/iac-aws-terragrunt`](https://github.com/tan-demo/demo-devops/tree/extra/iac-aws-terragrunt).
+> Not part of the graded harness — review and run **`main`** for the take-home.
 
 ---
 
@@ -153,7 +159,9 @@ The cluster and toolbox run inside Docker, so the in-cluster kubeconfig points a
 - **Latest stable, verified.** kubectl 1.36 / k3s 1.36 / Helm 4 / Terraform 1.15 / k6 v2 / ArgoCD 3.4 —
   pinned and checked against current docs (not from memory).
 - **What we cut:** multi-env (staging/prod) is structured (chart `values/`, ArgoCD app stubs) but only
-  **dev** is wired locally; Part 5 is validate-only (no live cloud).
+  **dev** is wired locally; Part 5 is validate-only (no live cloud). Full AWS Terragrunt (`iac/aws/`)
+  is on [`extra/iac-aws-terragrunt`](https://github.com/tan-demo/demo-devops/tree/extra/iac-aws-terragrunt)
+  — linked from the AWS diagram above, not merged into `main`.
 
 ---
 
