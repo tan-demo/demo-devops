@@ -1,0 +1,3 @@
+# Force LF so .sh files don't break under bash on a Windows (CRLF) checkout.
+* text=auto eol=lf
+*.png binary

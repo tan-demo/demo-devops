@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -eu
 
-# Host helper: tear everything down (the inverse of `docker compose up -d` + run-all.sh).
-# The k3d cluster runs as its own Docker containers (created by k3d inside the toolbox via the
-# mounted docker socket), so `docker compose down` alone does NOT remove it — we delete the
-# cluster first, then bring the toolbox + network down. Run it from your machine, not the toolbox.
+# Host teardown. k3d runs as its own containers, so we delete the cluster before `compose down`.
 if [ -n "${TOOLBOX:-}" ]; then
   echo "destroy.sh is a host helper — run it on your machine, not inside the toolbox."
   exit 0
 fi
+
+. "$(dirname "$0")/_preflight.sh"
+preflight_host || exit $?
 
 CLUSTER="${CLUSTER:-devops}"
 KUBECONFIG_OUT="${KUBECONFIG_OUT:-$HOME/.kube/k3d-devops.yaml}"

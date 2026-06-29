@@ -12,6 +12,28 @@ simulates a mixed **spot / on-demand / GPU** nodepool environment.
 
 ## Quick start (the Golden Rule)
 
+**Only prerequisite on the host: Docker with the Compose v2 plugin** (Docker Desktop ships both).
+Everything else — kubectl, helm, terraform, k6, k3d, argocd — lives inside the toolbox image.
+
+The host scripts source a **preflight** (`scripts/_preflight.sh`) that:
+
+- **detects the OS** with `uname` — Linux, **WSL2**, macOS, or **Windows Git Bash**;
+- **auto-installs what's missing** where it's safe: the Compose v2 plugin (user-local, no sudo), and
+  Docker itself via the platform's own package manager (`get.docker.com` on Linux, `brew --cask` on
+  macOS, `winget` on Windows). Set `PREFLIGHT_AUTO_INSTALL=0` for check-only;
+- **starts the Docker daemon** if it's installed but not running, then continues;
+- if a step genuinely can't be automated (macOS/Windows Docker Desktop is a licensed GUI app), it prints
+  **precise per-OS instructions** instead of dying with a cryptic mid-run error.
+
+If everything is already present, it just continues — so the Golden Rule runs unchanged.
+
+**Windows:** run from **WSL2** — that's the recommended and validated path (it *is* Linux, and Docker
+Desktop's WSL2 backend exposes `docker` there). **Git Bash** also works: the repo ships a `.gitattributes`
+that forces LF line endings (so the `.sh` files don't break on a CRLF checkout) and the preflight sets
+`MSYS_NO_PATHCONV` (so `/workspace`/`/kubeconfig` args aren't rewritten into Windows paths). The harness
+itself is OS-agnostic — it all runs inside Linux containers; only the thin host wrappper differs, and the
+preflight is what makes that portable. (Validated on macOS + Linux here; on Windows use WSL2.)
+
 ```bash
 git clone https://github.com/tan-demo/demo-devops && cd demo-devops
 docker compose up -d          # k3d cluster (4 workers) + toolbox + node labels/taints
@@ -84,11 +106,14 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
 
 ### Bonus — how this runs in production on AWS
 
-![quote-api in production on AWS](docs/aws-architecture.svg)
+![GPU inference service in production on AWS](docs/aws-architecture.svg)
 
 > Editable source: [`docs/aws-architecture.drawio`](docs/aws-architecture.drawio) (open in [draw.io](https://app.diagrams.net/)).
-> The service is stateless today, so the diagram does not invent a database dependency; RDS would be added
-> only if quotes/admin metadata become durable application data.
+> This is the production view the brief asks for, centered on the **Part 5a GPU inference service**: the
+> **GPU NodePool** (spot-preferred, on-demand fallback, `nvidia.com/gpu` taint, `WhenEmpty` consolidation)
+> runs the inference pods, while a small spot/on-demand **system NodePool** carries the ingress + quote-api
+> system tier. **RDS (Multi-AZ)** holds inference metadata, **ESO ← AWS Secrets Manager** supplies secrets
+> over IRSA, **Cloudflare** fronts the CDN/WAF, and Prometheus/Grafana scrape `/metrics`.
 >
 > **Production IaC sketch (optional):** Terragrunt modules for this diagram
 > ([`iac/aws/`](https://github.com/tan-demo/demo-devops/tree/extra/iac-aws-terragrunt/iac/aws) — VPC,

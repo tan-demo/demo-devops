@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Runs every numbered step in order. Safe to re-run (each step is idempotent).
-# On the host this re-execs inside the toolbox container (which has kubectl/helm/k6).
+# Runs the numbered steps (idempotent). On the host, re-execs inside the toolbox container.
 wait_for_bootstrap() {
   echo ">> waiting for k3d bootstrap (first boot may take a few minutes)..."
   i=0
@@ -20,6 +19,9 @@ wait_for_bootstrap() {
 }
 
 if [ -z "${TOOLBOX:-}" ]; then
+  . "$(dirname "$0")/_preflight.sh"
+  preflight_host || exit $?
+  require_toolbox_running || exit $?
   echo ">> not in toolbox — running all steps inside the toolbox container"
   wait_for_bootstrap
   rc=0
@@ -32,9 +34,7 @@ fi
 
 cd /workspace
 
-# Step 25 (reclaim drill) runs by default — it is fast and self-heals (uncordons).
-# Step 60 (load test) is opt-in: it installs the full kube-prometheus-stack and runs
-# k6, which is heavy on a fresh machine. Override with SKIP_STEPS="" to run everything.
+# 60 (load test) is opt-in — heavy. SKIP_STEPS="" runs everything.
 SKIP_STEPS="${SKIP_STEPS:-60}"
 
 for step in scripts/[0-9][0-9]-*.sh; do
