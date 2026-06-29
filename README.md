@@ -13,10 +13,20 @@ simulates a mixed **spot / on-demand / GPU** nodepool environment.
 ## Quick start (the Golden Rule)
 
 **Only prerequisite on the host: Docker with the Compose v2 plugin** (Docker Desktop ships both).
-Everything else — kubectl, helm, terraform, k6, k3d, argocd — lives inside the toolbox image. The host
-scripts run a **preflight** (`scripts/_preflight.sh`) and fail fast with install instructions if Docker
-is missing, the daemon is down, or the toolbox isn't up yet — so a missing dependency never surfaces as
-a cryptic mid-run error.
+Everything else — kubectl, helm, terraform, k6, k3d, argocd — lives inside the toolbox image.
+
+The host scripts source a **preflight** (`scripts/_preflight.sh`) that:
+
+- **detects the OS** with `uname` — Linux, **WSL2**, macOS, or **Windows Git Bash** (run the scripts
+  from WSL2 or Git Bash on Windows; Docker Desktop's WSL2 backend exposes `docker` there);
+- **auto-installs what's missing** where it's safe: the Compose v2 plugin (user-local, no sudo), and
+  Docker itself via the platform's own package manager (`get.docker.com` on Linux, `brew --cask` on
+  macOS, `winget` on Windows). Set `PREFLIGHT_AUTO_INSTALL=0` for check-only;
+- **starts the Docker daemon** if it's installed but not running, then continues;
+- if a step genuinely can't be automated (macOS/Windows Docker Desktop is a licensed GUI app), it prints
+  **precise per-OS instructions** instead of dying with a cryptic mid-run error.
+
+If everything is already present, it just continues — so the Golden Rule runs unchanged.
 
 ```bash
 git clone https://github.com/tan-demo/demo-devops && cd demo-devops
