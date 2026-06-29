@@ -84,11 +84,14 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
 
 ### Bonus — how this runs in production on AWS
 
-![quote-api in production on AWS](docs/aws-architecture.svg)
+![GPU inference service in production on AWS](docs/aws-architecture.svg)
 
 > Editable source: [`docs/aws-architecture.drawio`](docs/aws-architecture.drawio) (open in [draw.io](https://app.diagrams.net/)).
-> The service is stateless today, so the diagram does not invent a database dependency; RDS would be added
-> only if quotes/admin metadata become durable application data.
+> This is the production view the brief asks for, centered on the **Part 5a GPU inference service**: the
+> **GPU NodePool** (spot-preferred, on-demand fallback, `nvidia.com/gpu` taint, `WhenEmpty` consolidation)
+> runs the inference pods, while a small spot/on-demand **system NodePool** carries the ingress + quote-api
+> system tier. **RDS (Multi-AZ)** holds inference metadata, **ESO ← AWS Secrets Manager** supplies secrets
+> over IRSA, **Cloudflare** fronts the CDN/WAF, and Prometheus/Grafana scrape `/metrics`.
 >
 > **Production IaC sketch (optional):** Terragrunt modules for this diagram
 > ([`iac/aws/`](https://github.com/tan-demo/demo-devops/tree/extra/iac-aws-terragrunt/iac/aws) — VPC,
