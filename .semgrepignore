@@ -1,0 +1,6 @@
+# Provided/legacy reference (intentionally contains an example AWS key)
+ci/
+# Part 3 exercise + provided verify harness (not shipped to production)
+troubleshoot/
+# Local-dev toolbox image: runs as root by design (needs docker.sock + k3d)
+toolbox/

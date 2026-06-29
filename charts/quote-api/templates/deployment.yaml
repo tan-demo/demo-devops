@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "quote-api.fullname" . }}
+  labels:
+    {{- include "quote-api.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "quote-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "quote-api.labels" . | nindent 8 }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.targetPort }}"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: {{ include "quote-api.fullname" . }}
+      securityContext:
+        runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+        runAsGroup: {{ .Values.securityContext.runAsGroup }}
+        seccompProfile:
+          type: {{ .Values.securityContext.seccompProfile.type }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        nodeAffinity:
+          {{- if .Values.placement.restrictToCapacityPool }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: {{ .Values.placement.capacityLabel }}
+                    operator: In
+                    values:
+                      - {{ .Values.placement.spotValue }}
+                      - {{ .Values.placement.onDemandValue }}
+          {{- end }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: {{ .Values.placement.preferSpotWeight }}
+              preference:
+                matchExpressions:
+                  - key: {{ .Values.placement.capacityLabel }}
+                    operator: In
+                    values:
+                      - {{ .Values.placement.spotValue }}
+      topologySpreadConstraints:
+        {{- if .Values.placement.spreadByHostname }}
+        - maxSkew: {{ .Values.placement.hostnameMaxSkew }}
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: {{ .Values.placement.hostnameWhenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              {{- include "quote-api.selectorLabels" . | nindent 14 }}
+        {{- end }}
+        {{- if .Values.placement.spreadByCapacity }}
+        - maxSkew: {{ .Values.placement.capacityMaxSkew }}
+          topologyKey: {{ .Values.placement.capacityLabel }}
+          whenUnsatisfiable: {{ .Values.placement.capacityWhenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              {{- include "quote-api.selectorLabels" . | nindent 14 }}
+        {{- end }}
+      containers:
+        - name: quote-api
+          image: {{ include "quote-api.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+          env:
+            - name: APP_VERSION
+              value: {{ .Values.image.tag | default .Chart.AppVersion | quote }}
+            {{- range $k, $v := .Values.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+            capabilities:
+              {{- toYaml .Values.securityContext.capabilities | nindent 14 }}

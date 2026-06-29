@@ -1,0 +1,86 @@
+replicaCount: 3
+
+image:
+  repository: ghcr.io/tan-demo/quote-api
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+env:
+  CPU_BURN_SECONDS: "0.1"
+
+service:
+  port: 80
+  targetPort: 8000
+
+ingress:
+  enabled: true
+  className: traefik
+  host: ""
+  path: /
+  pathType: Prefix
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 60
+
+pdb:
+  enabled: true
+  minAvailable: 2
+
+placement:
+  capacityLabel: acme.io/capacity
+  spotValue: spot
+  onDemandValue: on-demand
+  preferSpotWeight: 100
+  restrictToCapacityPool: true
+  spreadByHostname: false
+  hostnameWhenUnsatisfiable: ScheduleAnyway
+  hostnameMaxSkew: 1
+  spreadByCapacity: true
+  capacityWhenUnsatisfiable: DoNotSchedule
+  capacityMaxSkew: 1
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
+probes:
+  liveness:
+    path: /healthz
+    initialDelaySeconds: 3
+    periodSeconds: 10
+  readiness:
+    path: /readyz
+    initialDelaySeconds: 2
+    periodSeconds: 5
+
+monitoring:
+  enabled: false
+  releaseLabel: kube-prometheus-stack
+  serviceMonitor: true
+  prometheusRule: true
+  dashboard: true
+  scrapeInterval: 15s
+  alert:
+    latencyP95Seconds: 0.25
+    forDuration: 2m

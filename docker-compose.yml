@@ -1,0 +1,30 @@
+name: demo-devops
+
+services:
+  toolbox:
+    build:
+      context: .
+      dockerfile: toolbox/Dockerfile
+      args:
+        TARGETARCH: ${TARGETARCH:-arm64}
+    image: demo-devops-toolbox:local
+    container_name: devops-toolbox
+    restart: unless-stopped
+    working_dir: /workspace
+    environment:
+      KUBECONFIG: /kubeconfig/config
+      GH_OWNER: ${GH_OWNER:-tan-demo}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workspace
+      - kubeconfig:/kubeconfig
+    networks:
+      - k3dnet
+
+volumes:
+  kubeconfig:
+
+networks:
+  k3dnet:
+    name: k3dnet

@@ -1,0 +1,14 @@
+image:
+  tag: latest
+  pullPolicy: Always
+
+ingress:
+  host: quote-api.staging.example.com
+
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60
+
+monitoring:
+  enabled: true

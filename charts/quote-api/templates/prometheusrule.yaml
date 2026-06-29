@@ -1,0 +1,24 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.prometheusRule }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "quote-api.fullname" . }}
+  labels:
+    {{- include "quote-api.labels" . | nindent 4 }}
+    release: {{ .Values.monitoring.releaseLabel }}
+spec:
+  groups:
+    - name: quote-api.rules
+      rules:
+        - alert: QuoteApiHighLatencyP95
+          expr: >-
+            histogram_quantile(0.95,
+              sum(rate(quote_request_duration_seconds_bucket[5m])) by (le))
+            > {{ .Values.monitoring.alert.latencyP95Seconds }}
+          for: {{ .Values.monitoring.alert.forDuration }}
+          labels:
+            severity: warning
+          annotations:
+            summary: "quote-api p95 latency above threshold"
+            description: "p95 latency of /api/quote exceeded {{ .Values.monitoring.alert.latencyP95Seconds }}s for {{ .Values.monitoring.alert.forDuration }}."
+{{- end }}

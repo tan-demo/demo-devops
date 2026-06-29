@@ -1,0 +1,5 @@
+cloudflare_api_token = "REPLACE_WITH_TOKEN"
+zone_id              = "REPLACE_WITH_ZONE_ID"
+domain               = "example.com"
+origin_ip            = "192.0.2.1"
+adopted_record_id    = "REPLACE_WITH_RECORD_ID"

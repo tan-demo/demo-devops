@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: quote-api
+  namespace: argocd
+spec:
+  description: Quote API GitOps project
+  sourceRepos:
+    - https://github.com/tan-demo/demo-devops
+    - https://github.com/tan-demo/demo-devops.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: quote-api
+    - server: https://kubernetes.default.svc
+      namespace: argocd
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

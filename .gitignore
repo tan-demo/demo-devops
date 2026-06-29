@@ -1,0 +1,67 @@
+# --- Secrets / credentials (commit = instant fail) ---
+*.env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+kubeconfig
+*kubeconfig*
+.kube/
+*-token
+*.token
+secrets.*
+*secret*.yaml
+!**/templates/*secret*.yaml
+.cosign.key
+cosign.key
+*.tfvars
+!*.tfvars.example
+.terraform/
+.terraform.lock.hcl
+.terragrunt-cache/
+terraform.tfstate
+terraform.tfstate.*
+crash.log
+
+# --- k3d / k8s local state ---
+.k3d/
+*.kubeconfig
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node (legacy / tooling) ---
+node_modules/
+
+# --- Build / artifacts ---
+dist/
+build/
+*.log
+
+# --- k6 / load test output ---
+k6/*.json
+k6/results/
+summary.json
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# --- Assignment brief (keep out of public repo) ---
+ASSIGNMENT - DevOps.md
+
+# --- Internal working notes (disclosure is via AI-USAGE.md) ---
+.claude/
