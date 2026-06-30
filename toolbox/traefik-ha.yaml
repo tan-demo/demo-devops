@@ -14,3 +14,13 @@ spec:
               matchLabels:
                 app.kubernetes.io/name: traefik
             topologyKey: kubernetes.io/hostname
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: acme.io/capacity
+                  operator: In
+                  values: ["on-demand"]
+            - matchExpressions:
+                - key: node-role.kubernetes.io/control-plane
+                  operator: Exists
