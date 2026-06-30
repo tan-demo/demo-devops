@@ -1,7 +1,0 @@
-NAME        REFERENCE          TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
-quote-api   Deployment/quote-api   4%/60%          3         6         3          12m
-quote-api   Deployment/quote-api   88%/60%         3         6         3          12m
-quote-api   Deployment/quote-api   88%/60%         3         6         5          12m
-quote-api   Deployment/quote-api   228%/60%        3         6         6          12m
-quote-api   Deployment/quote-api   354%/60%        3         6         6          13m
-quote-api   Deployment/quote-api   130%/60%        3         6         6          14m

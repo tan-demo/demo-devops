@@ -1,0 +1,15 @@
+NAME        REFERENCE              TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+quote-api   Deployment/quote-api   cpu: 2%/60%   3         6         3          8m17s
+quote-api   Deployment/quote-api   cpu: 2%/60%   3         6         3          8m17s
+quote-api   Deployment/quote-api   cpu: 43%/60%   3         6         3          8m45s
+quote-api   Deployment/quote-api   cpu: 177%/60%   3         6         3          9m
+quote-api   Deployment/quote-api   cpu: 305%/60%   3         6         6          9m15s
+quote-api   Deployment/quote-api   cpu: 335%/60%   3         6         6          9m30s
+quote-api   Deployment/quote-api   cpu: 288%/60%   3         6         6          9m45s
+quote-api   Deployment/quote-api   cpu: 307%/60%   3         6         6          10m
+quote-api   Deployment/quote-api   cpu: 346%/60%   3         6         6          10m
+quote-api   Deployment/quote-api   cpu: 326%/60%   3         6         6          10m
+quote-api   Deployment/quote-api   cpu: 302%/60%   3         6         6          10m
+quote-api   Deployment/quote-api   cpu: 307%/60%   3         6         6          11m
+quote-api   Deployment/quote-api   cpu: 287%/60%   3         6         6          11m
+quote-api   Deployment/quote-api   cpu: 287%/60%   3         6         6          11m
