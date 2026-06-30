@@ -9,7 +9,7 @@ FROM python:3.14-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/opt/venv/bin:$PATH"
-RUN groupadd -r app && useradd -r -g app -u 1001 app
+RUN groupadd -g 1001 app && useradd -u 1001 -g app -M -s /usr/sbin/nologin app
 COPY --from=builder /opt/venv /opt/venv
 WORKDIR /app
 COPY main.py .
