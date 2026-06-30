@@ -87,11 +87,12 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
   now selects a **spot node that is actually hosting a `quote-api` pod**, drains it, keeps a curl loop
   running, and fails if there are request failures, Pending pods, loss of on-demand placement, or any pod
   lands outside the spot/on-demand pool.
-- For the drill's "service stays up" to be real, the **ingress can't be a single point of failure** on
-  the drained node: bootstrap makes **Traefik HA — 2 replicas with hostname anti-affinity** (via a k3s
-  `HelmChartConfig`), so draining any one node always leaves a Traefik up. The app pods also get a
-  **`preStop` sleep + 30s grace** so in-flight requests drain before the pod exits — together the drill
-  now reports **`ok=N / fail=0`** deterministically.
+- For the drill's "service stays up" to be real, the **ingress must not sit on a reclaimable node**:
+  bootstrap runs **Traefik as 2 replicas pinned to the non-spot nodes** (on-demand + control-plane, via
+  a k3s `HelmChartConfig` with node affinity + hostname anti-affinity), so draining a **spot** node never
+  touches the ingress. The app pods also get a **`preStop` sleep + 30s grace** so in-flight requests
+  drain before the pod exits — together the drill reports **`ok=N / fail=0` deterministically** (verified
+  across repeated runs; an earlier hostname-only spread was flaky because Traefik could land on spot).
 
 ### Bonus — how this runs in production on AWS
 
