@@ -199,8 +199,10 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
 - **Architecture.** The toolbox image **auto-detects** the build arch (`uname -m` → `amd64`/`arm64`),
   so `docker compose up -d` just works on both Apple Silicon and Intel/CI — no env var to set.
 - **Part 6 is opt-in in `run-all`.** Default `run-all` skips `60-loadtest.sh` (kube-prometheus-stack + k6
-  is heavy). For the Part 6 checklist: `docker compose exec toolbox /workspace/scripts/60-loadtest.sh`,
-  or `SKIP_STEPS= ./scripts/run-all.sh` to run everything.
+  is heavy). Run it with `docker compose exec toolbox /workspace/scripts/60-loadtest.sh`, or
+  `SKIP_STEPS= ./scripts/run-all.sh` to run everything. **You don't have to run it to grade Part 6** —
+  the full deliverable is committed: `LOADTEST.md`, the real `loadtest/evidence/` captures (HPA 3→6 +
+  pod events), `loadtest/dashboard.json`, and the during-load Grafana screenshot.
 
 ---
 
