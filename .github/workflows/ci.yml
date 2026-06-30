@@ -35,12 +35,12 @@ jobs:
       static: ${{ steps.manual.outputs.static || steps.filter.outputs.static }}
     steps:
       - uses: actions/checkout@v7
-      - if: github.event_name == 'workflow_dispatch'
+      - if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
         id: manual
         run: |
           echo "app=true" >> "$GITHUB_OUTPUT"
           echo "static=true" >> "$GITHUB_OUTPUT"
-      - if: github.event_name != 'workflow_dispatch'
+      - if: github.event_name == 'pull_request'
         uses: dorny/paths-filter@v4
         id: filter
         with:
