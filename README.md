@@ -92,7 +92,7 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
   a k3s `HelmChartConfig` with node affinity + hostname anti-affinity), so draining a **spot** node never
   touches the ingress. The app pods also get a **`preStop` sleep + 30s grace** so in-flight requests
   drain before the pod exits — together the drill reports **`ok=N / fail=0` deterministically** (verified
-  across repeated runs; an earlier hostname-only spread was flaky because Traefik could land on spot).
+  across repeated runs; an earlier hostname-only spread was flaky because Traefik could land on spot). This mirrors production: the ingress/system tier belongs on a stable on-demand (managed node group), never spot — which is exactly what the AWS diagram shows.
 
 ### Bonus — how this runs in production on AWS
 
