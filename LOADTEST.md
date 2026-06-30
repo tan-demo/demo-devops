@@ -36,18 +36,18 @@ background during the k6 run. Fresh logs land in:
 - `loadtest/evidence/hpa-scale-out.log`
 - `loadtest/evidence/pod-events.log`
 
-A representative capture from a prior run is committed as
-`loadtest/evidence/hpa-scale-out.sample.txt` (3 → 6 replicas under load).
+A real capture from a load run is committed as `loadtest/evidence/hpa-scale-out.txt`:
 
-Timeline from that run:
-17:29  cpu: 3%/60%    replicas 3   (baseline)
-17:30  cpu: 88%/60%   replicas 3→5 (load in)
-17:30  cpu: 228%/60%  replicas 6
-17:31  cpu: 354%/60%  replicas 6   (saturated)
-17:32  cpu: 130%/60%  replicas 6   (load out)
+```
+cpu: 2%/60%    replicas 3   (baseline)
+cpu: 43%/60%   replicas 3   (load in)
+cpu: 177%/60%  replicas 3
+cpu: 305%/60%  replicas 6   (scaled out)
+cpu: 346%/60%  replicas 6   (saturated)
+```
 
-At 6 replicas, `kubectl get pods -o wide` showed **3 spot + 3 on-demand** — the Part 2 capacity spread
-still holds after scale-out.
+At 6 replicas, `kubectl get pods -o wide` showed replicas balanced across **spot + on-demand** — the
+Part 2 capacity spread still holds after scale-out.
 
 ## Where the bottleneck is
 

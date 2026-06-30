@@ -48,9 +48,8 @@ Diagnose from the edge inward:
    that ignores them for anonymous pages.
 5. **Origin:** measure origin TTFB directly (test record, grey-cloud); high origin render time inflates LCP
    even when caching is fixed.
-6. **Re-verify:** second request should show `cf-cache-status: HIT`; then re-measure mobile LCP (Lighthouse /
-   WebPageTest). Note LCP is often the hero image, so also serve modern formats (AVIF/WebP, Polish) and add a
-   priority hint — HTML caching is necessary but not always sufficient.
+6. **Re-verify:** the second request should show `cf-cache-status: HIT`; re-measure mobile LCP. HTML caching
+   is necessary but not always sufficient — if LCP is still high it's usually the hero image (serve AVIF/WebP).
 
 ## 4. Application secrets on EKS
 

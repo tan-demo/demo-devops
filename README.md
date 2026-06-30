@@ -178,8 +178,9 @@ With 3 replicas: **≥1 on-demand guaranteed, the rest biased to spot**, never c
   by git SHA. To pull from the registry instead, set `image.tag` to a published SHA and `pullPolicy: Always`.
 - **Observability is GitOps-managed.** ServiceMonitor / PrometheusRule / dashboard live in the Helm
   chart (gated by `monitoring.enabled`); kube-prometheus-stack itself is installed by `scripts/60`.
-- **Latest stable, verified.** kubectl 1.36 / k3s 1.36 / Helm 4 / Terraform 1.15 / k6 v2 / ArgoCD 3.4 —
-  pinned and checked against current docs (not from memory).
+- **Latest stable, verified.** kubectl 1.36 / k3s 1.36 / Helm 4 / Terraform 1.15 / k6 v2 / ArgoCD 3.4 /
+  Karpenter v1 / Python 3.14 / Alpine 3.24, plus the GitHub Actions on their latest majors — every
+  version checked against its release feed, not the model's memory.
 - **What we cut:** multi-env (staging/prod) is structured (chart `values/`, ArgoCD app stubs) but only
   **dev** is wired locally; Part 5 is validate-only (no live cloud). Full AWS Terragrunt (`iac/aws/`)
   is on [`extra/iac-aws-terragrunt`](https://github.com/tan-demo/demo-devops/tree/extra/iac-aws-terragrunt)
